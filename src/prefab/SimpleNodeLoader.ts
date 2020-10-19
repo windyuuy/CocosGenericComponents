@@ -2,7 +2,7 @@
 namespace gcc.prefab {
     const { ccclass, property } = cc._decorator;
 
-    @ccclass('SimpleNodeLoader')
+    // @ccclass('SimpleNodeLoader')
     export class SimpleNodeLoader extends cc.Component {
 
         @property({ type: [cc.Prefab] })

@@ -2,7 +2,7 @@
 namespace gcc.uit {
     const { ccclass, property } = cc._decorator;
 
-    @ccclass("CCGamepad")
+    // @ccclass("CCGamepad")
     export class CCGamepad extends cc.Component {
 
         @property(cc.Node)
@@ -37,8 +37,5 @@ namespace gcc.uit {
             this.gamepad.setupSimpleView()
         }
 
-        update() {
-            console.log(JSON.stringify(this.gamepad.leftStick.ctrlStatus.dir), this.gamepad.rightStick.ctrlStatus.pressed)
-        }
     }
 }

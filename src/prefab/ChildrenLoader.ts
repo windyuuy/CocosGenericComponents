@@ -2,7 +2,7 @@
 namespace gcc.prefab {
     const { ccclass, property, executeInEditMode } = cc._decorator;
 
-    @ccclass('ChildrenLoader')
+    // @ccclass('ChildrenLoader')
     @executeInEditMode
     export class ChildrenLoader extends cc.Component {
 
