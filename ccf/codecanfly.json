@@ -1,0 +1,13 @@
+{
+	"name": "gcccomps",
+	"version": "0.0.2",
+	"files": [
+		"gcccomps.js",
+		"gcccomps.d.ts",
+		"gcccomps.js.map"
+	],
+	"fileRoot": "../dist/",
+	"tags": [],
+	"commands": [],
+	"uses": []
+}
