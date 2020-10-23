@@ -16,6 +16,9 @@ namespace gcc.uit {
 
         gamepad: kitten.gamepad.NormalGamepad
 
+        @property
+        toDrawDebugView: boolean = false
+
         onLoad() {
             this.gamepad = new kitten.gamepad.NormalGamepad().init()
         }
@@ -34,7 +37,9 @@ namespace gcc.uit {
                 syncViewData(stick, node)
                 this.gamepad.virutalCtrls.push(stick)
             }
-            this.gamepad.setupSimpleView()
+            if (this.toDrawDebugView) {
+                this.gamepad.setupSimpleView()
+            }
         }
 
     }
