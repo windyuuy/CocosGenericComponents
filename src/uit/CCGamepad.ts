@@ -2,6 +2,8 @@
 namespace gcc.uit {
     const { ccclass, property } = cc._decorator;
 
+    const Vector = fsync.Vector
+
     // @ccclass("CCGamepad")
     export class CCGamepad extends cc.Component {
 
@@ -37,7 +39,8 @@ namespace gcc.uit {
                     let vec = transform.transformTool.convPos3ToVector(stickView.stickCenter.convertToWorldSpaceAR(new cc.Vec3()))
                     stick.setStartPosOrigin(vec)
                     let r = (stickView.stickCenter.width + stickView.stickCenter.height) / 2
-                    stick.setCircleRadius(r)
+                    stick.setCircleRadius(r / 2)
+                    stick.resetTouchPoint()
                 }
             }
             syncViewData(this.gamepad.leftStick, this.leftStick)
@@ -66,9 +69,19 @@ namespace gcc.uit {
                 }
                 if (stickView.stickTouchPoint) {
                     // 更新摇杆触摸点视图位置
+                    let ctrlCenter = stick.getCtrlCenterPos()
                     let touchPoint = stick.ctrlStatus.touchPoint
-                    let pos = stickView.stickCenter.parent.convertToNodeSpaceAR(transform.transformTool.convVectorToPos3(touchPoint))
-                    stickView.stickTouchPoint.position = pos
+
+                    let offset = fsync.Vector.subDown(touchPoint.clone(), ctrlCenter)
+                    if (fsync.Vector.len(offset) > stick.getCircleRadius()) {
+                        fsync.Vector.multUpVar(fsync.Vector.normalizeSelf(offset), stick.getCircleRadius())
+                        let pos = fsync.Vector.addUp(offset, ctrlCenter)
+                        let ccpos = stickView.stickTouchPoint.parent.convertToNodeSpaceAR(transform.transformTool.convVectorToPos3(pos))
+                        stickView.stickTouchPoint.position = ccpos
+                    } else {
+                        let ccpos = stickView.stickTouchPoint.parent.convertToNodeSpaceAR(transform.transformTool.convVectorToPos3(touchPoint))
+                        stickView.stickTouchPoint.position = ccpos
+                    }
                 }
             })
         }

@@ -1167,6 +1167,7 @@ declare namespace kitten.gamepad {
          * 重置当前摇杆中心为原始中心点
          */
         resetStartPos(): void;
+        resetTouchPoint(): void;
         /**
          * 设置主视图
          * @param pos
@@ -1234,6 +1235,8 @@ declare namespace kitten.gamepad {
      * 自动重定位的摇杆
      */
     class GameStick extends CircleStick {
+        protected needResetAfterLoose: boolean;
+        init(id: string): this;
         updateStatus(): void;
     }
 }
