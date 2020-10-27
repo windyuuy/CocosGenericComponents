@@ -76,6 +76,27 @@ declare namespace fsync {
          */
         static multiplyQuaternion(out: number[], a: number[], b: number[]): number[];
     }
+    class Vector2 {
+        protected data: number[];
+        static zero: Vector2;
+        static fromNumArray(ns: number[]): Vector2;
+        clone(): Vector2;
+        constructor(value?: number);
+        getBinData(): number[];
+        setBinData(data: number[]): void;
+        get x(): number;
+        set x(value: number);
+        get y(): number;
+        set y(value: number);
+        copyXYLike({ x, y }: {
+            x: number;
+            y: number;
+        }): void;
+        static fromXYZLike({ x, y }: {
+            x: number;
+            y: number;
+        }): Vector2;
+    }
     class Vector3 {
         protected data: number[];
         static zero: Vector3;
@@ -90,6 +111,16 @@ declare namespace fsync {
         set y(value: number);
         get z(): number;
         set z(value: number);
+        copyXYZLike({ x, y, z }: {
+            x: number;
+            y: number;
+            z: number;
+        }): void;
+        static fromXYZLike({ x, y, z }: {
+            x: number;
+            y: number;
+            z: number;
+        }): Vector3;
     }
     class Vector4 {
         protected data: number[];
@@ -142,6 +173,37 @@ declare namespace fsync {
          */
         static crossBy3(b: Vector3, a: Vector3): Vector3;
         static dot(b: Vector3, a: Vector3): number;
+        /**
+         * 根据x，y决定的方向转换为角度 [-PI~PI]
+         * @param b
+         */
+        static getRotationZ2(b: IVector): number;
+        /**
+         * 根据x，y决定的方向转换为角度 [-PI~PI]
+         * @param b
+         */
+        static getRotation2(b: IVector): Vector3;
+        static asVectorN<T extends IVector>(b: IVector): T;
+        static asVector3(b: IVector): Vector3;
+        static asVector4(b: IVector): Vector4;
+    }
+}
+declare namespace fsync {
+    class Size2 extends Vector2 {
+        constructor(width?: number, height?: number);
+        get width(): number;
+        set width(n: number);
+        get height(): number;
+        set height(n: number);
+    }
+    class Size3 extends Vector3 {
+        constructor(width?: number, height?: number, depth?: number);
+        get width(): number;
+        set width(n: number);
+        get height(): number;
+        set height(n: number);
+        get depth(): number;
+        set depth(n: number);
     }
 }
 declare namespace lang.helper {
@@ -217,7 +279,7 @@ declare namespace fsync {
 }
 declare namespace fsync {
     interface IMerge<T> {
-        mergeFrom(rand: T): any;
+        mergeFrom(target: T): any;
     }
 }
 declare namespace fsync {
@@ -504,7 +566,7 @@ declare namespace fsync {
         init(): this;
         instantiate(prefab: IPrefab): Entity;
         getCommandBuffer(): ECSCommandBuffer;
-        protected get entityManager(): EntityManager;
+        get entityManager(): EntityManager;
         /**
          * 所有操作必须一帧内完成，不能有遗留闭包，否则会出现无法彻底覆写世界的问题
          */
@@ -516,7 +578,7 @@ declare namespace fsync {
 declare namespace fsync {
     class UpdaterGroup implements IUpdater {
         updaters: IUpdater[];
-        init(): void;
+        init(): this;
         addUpdater(update: IUpdater): void;
         onBeforeUpdate(): void;
         update(): void;
@@ -527,7 +589,7 @@ declare namespace fsync {
             [key: string]: UpdaterGroup;
         };
         updateOrder: string[];
-        init(): void;
+        init(): this;
         getUpdaterGroup(groupName: string): UpdaterGroup;
         addUpdaterGroup(groupName: string, group: UpdaterGroup): void;
         setGroupUpdateOrder(updateOrder: string[]): void;
@@ -543,10 +605,15 @@ declare namespace fsync {
         env: WorldEnv;
         entityManager: EntityManager;
         utils: FrameSyncUtils;
-        prefabEnv: PrefabEnv;
+        prefabEnv: ViewPrefabEnv;
         frameCount: number;
         init(utils?: FrameSyncUtils): this;
         mergeFrom(world: ECSWorld): void;
+        protected dataMap: {
+            [key: string]: any;
+        };
+        getData<T extends fsync.IMerge<T>>(key: string): T;
+        setData<T extends fsync.IMerge<T>>(key: string, data: T): void;
     }
 }
 declare namespace fsync {
@@ -580,15 +647,15 @@ declare namespace fsync {
 declare namespace fsync {
     interface IPrefabHelper {
         init(): any;
-        instantiate(prefab: IPrefab, depsEnv: PrefabEnv): Entity;
+        instantiate(prefab: IPrefab, depsEnv: ViewPrefabEnv): Entity;
     }
     class PrefabHelper implements IPrefabHelper {
         init(): this;
-        instantiate(prefab: IPrefab, depsEnv: PrefabEnv): Entity;
+        instantiate(prefab: IPrefab, depsEnv: ViewPrefabEnv): Entity;
     }
     class PrefabHelperWithoutView implements IPrefabHelper {
         init(): this;
-        instantiate(prefab: IPrefab, depsEnv: PrefabEnv): Entity;
+        instantiate(prefab: IPrefab, depsEnv: ViewPrefabEnv): Entity;
     }
 }
 declare namespace fsync {
@@ -623,7 +690,7 @@ declare namespace fsync {
 declare namespace fsync {
     class Updater implements IUpdater {
         updaters: IUpdater[];
-        init(): void;
+        init(): this;
         onBeforeUpdate(): void;
         update(): void;
         onAfterUpdate(): void;
@@ -726,10 +793,15 @@ declare namespace fsync {
         prefabId: PrefabId;
         init(prefabId: PrefabId): this;
     }
+    interface PrefabEnv {
+        system?: fsync.SystemBase;
+        entityManager: fsync.EntityManager;
+        world: fsync.ECSWorld;
+    }
     /**
      * prefab实例化环境
      */
-    class PrefabEnv {
+    class ViewPrefabEnv {
         entityManager: EntityManager;
         viewBinder: ViewBindManager;
         prefabHelper: IPrefabHelper;
@@ -740,18 +812,18 @@ declare namespace fsync {
     interface IPrefab {
         init(): IPrefab;
         load(): IPrefab;
-        createEntity(depsEnv: PrefabEnv): Entity;
+        createEntity(depsEnv: ViewPrefabEnv): Entity;
         getPrefabMeta(): PrefabMeta;
-        create(depsEnv: PrefabEnv): Entity;
+        create(depsEnv: ViewPrefabEnv): Entity;
     }
 }
 declare namespace fsync {
     class PrefabBase implements IPrefab {
         init(): IPrefab;
         load(): IPrefab;
-        create(depsEnv: PrefabEnv): Entity;
+        create(depsEnv: ViewPrefabEnv): Entity;
         getPrefabMeta(): PrefabMeta;
-        createEntity(depsEnv: PrefabEnv): Entity;
+        createEntity(depsEnv: ViewPrefabEnv): Entity;
     }
 }
 declare namespace fsync {
@@ -771,16 +843,128 @@ declare namespace fsync {
 }
 declare namespace fsync {
     class ScenePrefab extends PrefabBase {
-        depsEnv: PrefabEnv;
+        depsEnv: ViewPrefabEnv;
         get prefabMananger(): PrefabManager;
         get entityManager(): EntityManager;
-        setEnv(depsEnv: PrefabEnv): void;
+        setEnv(depsEnv: ViewPrefabEnv): void;
         instantiate<T extends IPrefab>(prefab: T): Entity;
         instantiateEntity<T extends IPrefab>(prefab: T): Entity;
-        createEntity(depsEnv: PrefabEnv): Entity;
+        createEntity(depsEnv: ViewPrefabEnv): Entity;
     }
 }
 declare namespace fsync {
+}
+declare namespace fsync.app {
+    class GameSceneBase implements fsync.app.ISubScene {
+        subScenes: fsync.app.SubScene[];
+        sharedSlots: any;
+        fightWorld: fsync.app.GameWorld;
+        clear(): void;
+        start(): void;
+        update(): void;
+        init(fightWorld: fsync.app.GameWorld, sharedSlots: any): this;
+        loadSubScenes(cls: new () => fsync.app.SubScene): void;
+    }
+}
+declare namespace fsync.app {
+    /**
+     * 用于构建游戏世界运作规则
+     */
+    class GameWorld {
+        mainProcess: fsync.WorldMainProcess;
+        /**
+         * 是否准备完毕可以调度
+         */
+        isWorldReady: boolean;
+        mainWorld: SubWorld;
+        predictWorld: SubWorld;
+        /**
+         * 清空重置世界
+         */
+        clear(): void;
+        /**
+         * 开始运转
+         */
+        start(): void;
+        /**
+         * 加载子世界
+         * @param clsMain
+         * @param clsPredict
+         * @param slots
+         */
+        loadSubWorlds(clsMain: new () => SubWorld, clsPredict: new () => SubWorld, slots: any): void;
+        init(): this;
+        /**
+         * 世界调度
+         */
+        update(): void;
+    }
+}
+declare namespace fsync.app {
+    interface ISubScene {
+        /**
+         * 清除场景
+         */
+        clear(): void;
+        /**
+         * 开始新场景运作
+         */
+        start(): void;
+        update(): void;
+    }
+    /**
+     * 构建管理游戏玩法场景
+     */
+    class SubScene implements ISubScene {
+        world: SubWorld;
+        sharedSlots: any;
+        /**
+         * 清除场景
+         */
+        clear(): void;
+        /**
+         * 开始新场景运作
+         */
+        start(): void;
+        init(world: SubWorld, sharedSlots: any): this;
+        initScene(): void;
+        update(): void;
+    }
+}
+declare namespace fsync.app {
+    /**
+     * 用于构建游戏世界规则
+     */
+    class SubWorld {
+        mainProcess: fsync.WorldMainProcess;
+        inputCmdBuffer: fsync.InputCmdBuffer;
+        timer: fsync.Timer;
+        world: fsync.ECSWorld;
+        updater: fsync.UpdaterGroupManager;
+        get entityManager(): EntityManager;
+        clear(): void;
+        start(): void;
+        /**
+         * 创建子系统并加入调度组
+         * @param groupName
+         * @param tsys
+         */
+        addSystem<T extends fsync.SystemBase>(groupName: string, tsys: new () => T): T;
+        /**
+         * 初始化各种子系统实例设置
+         * @param sharedSlots
+         */
+        initSystems(sharedSlots: any): void;
+        init(input: SubWorldInitInput): this;
+        update(): void;
+    }
+}
+declare namespace fsync.app {
+    interface SubWorldInitInput {
+        mainProcess?: fsync.WorldMainProcess;
+        world?: fsync.ECSWorld;
+        updater?: fsync.UpdaterGroupManager;
+    }
 }
 declare namespace fsync {
     type InputCmdId = string;
@@ -952,6 +1136,10 @@ declare namespace kitten.gamepad {
          */
         protected ctrlPos: Vector3;
         /**
+        * 控制器轴心起始位置
+        */
+        protected ctrlPosOrigin: Vector3;
+        /**
          * 获取触控范围中心店
          */
         getCtrlCenterPos(): fsync.Vector3;
@@ -959,12 +1147,28 @@ declare namespace kitten.gamepad {
          * 控制器状态
          */
         ctrlStatus: StickCtrlState;
+        protected lastCtrlStatus: StickLastCtrlState;
+        updateStatus(): void;
+        updateTouchAction(): void;
+        /**
+         * 计算触摸矢量数据
+         */
+        calcTouchVector(): void;
         init(id: string): this;
+        /**
+         * 动态设置当前摇杆中心点
+         * @param pos
+         */
+        setStartPos(pos: Vector3): void;
+        /**
+         * 重置当前摇杆中心为原始中心点
+         */
+        resetStartPos(): void;
         /**
          * 设置主视图
          * @param pos
          */
-        setPos(pos: Vector3): void;
+        setStartPosOrigin(pos: Vector3): void;
         /**
          * 触控半径
          */
@@ -1014,6 +1218,14 @@ declare namespace kitten.gamepad {
         protected circleView: graph.ISprite;
         init(): this;
         setupView(ctrl: CircleStick, color: string): void;
+    }
+}
+declare namespace kitten.gamepad {
+    /**
+     * 自动重定位的摇杆
+     */
+    class GameStick extends CircleStick {
+        updateStatus(): void;
     }
 }
 declare namespace kitten.gamepad {
@@ -1070,6 +1282,11 @@ declare namespace kitten.gamepad {
          */
         get rightStickStatus(): StickCtrlState;
         /**
+         * 更新手柄状态,包含:
+         * - 延迟状态
+         */
+        updateVirtualCtrls(): void;
+        /**
          * 摇杆列表
          */
         virutalCtrls: CircleStick[];
@@ -1093,12 +1310,43 @@ declare namespace kitten.gamepad {
     type Vector3 = fsync.Vector3;
     const Vector3: typeof fsync.Vector3;
     /**
+    * 操控状态
+    * - move 移动中
+    * - begin 刚开始点击
+    * - end 刚刚松开
+    * - loosed 松开状态
+    */
+    export type TTouchAction = "move" | "begin" | "end" | "loosed";
+    /**
+     * 前一次摇杆状态
+     */
+    export class StickLastCtrlState {
+        pressed: boolean;
+    }
+    /**
      * 摇杆状态
      */
     export class StickCtrlState {
+        /**
+         * 当前触摸位置
+         */
+        touchPoint: Vector3;
+        /**
+         * 操控方向
+         */
         dir: Vector3;
+        /**
+         * 操作强度
+         */
         strength: number;
+        /**
+         * 是否处于按下状态
+         */
         pressed: boolean;
+        /**
+         * 触摸操控状态
+         */
+        touchAction: TTouchAction;
     }
     export {};
 }
@@ -1312,6 +1560,7 @@ declare namespace kitten.rpg {
         putCmd(cmd: T): void;
         getCmdBuffer(actorId: TActorId): SingleActorCmdBuffer<T>;
         getLatestCmd(actorId: TActorId): T;
+        getOrPutLatestCmd(actorId: TActorId): T;
         getActors(): TActorId[];
         clear(): void;
     }
@@ -1371,6 +1620,7 @@ declare namespace kitten.rpg {
              * 技能在技能列表中索引
              */
             skillIndex: number;
+            touchAction: gamepad.TTouchAction;
             targets?: string[];
             dir: number[];
         }[];
@@ -2958,9 +3208,9 @@ declare namespace fsync {
     }
 }
 declare namespace fsync {
-    interface IView {
-        getRaw?<T>(): T;
-        init(): IView;
+    interface IView<T = any> {
+        getRaw?<W = T>(): W;
+        init(): IView<T>;
         setPos(pos: Vector3): void;
         setScale(pos: Vector3): void;
         setRotation(quat: Vector4): void;
@@ -3014,7 +3264,7 @@ declare namespace fsync {
         setRotation(quat: Vector4): void;
     }
     class BulletPrefab extends PrefabBase {
-        createEntity(depsEnv: PrefabEnv): Entity;
+        createEntity(depsEnv: ViewPrefabEnv): Entity;
         getPrefabMeta(): PrefabMeta;
     }
 }
@@ -3028,7 +3278,7 @@ declare namespace fsync {
         setRotation(quat: Vector4): void;
     }
     class HeroPrefab extends PrefabBase {
-        createEntity(depsEnv: PrefabEnv): Entity;
+        createEntity(depsEnv: ViewPrefabEnv): Entity;
         protected attachRoleComponents(entityManager: EntityManager, entity: Entity): void;
         getPrefabMeta(): PrefabMeta;
     }
@@ -3038,14 +3288,14 @@ declare namespace fsync {
         init(): this;
     }
     class EnemyPrefab extends HeroPrefab {
-        createEntity(depsEnv: PrefabEnv): Entity;
+        createEntity(depsEnv: ViewPrefabEnv): Entity;
         getPrefabMeta(): PrefabMeta;
     }
 }
 declare namespace fsync {
     class FightScenePrefab extends ScenePrefab {
-        create(depsEnv: PrefabEnv): Entity;
-        createEntity(depsEnv: PrefabEnv): Entity;
+        create(depsEnv: ViewPrefabEnv): Entity;
+        createEntity(depsEnv: ViewPrefabEnv): Entity;
     }
 }
 declare namespace fsync {
