@@ -44,6 +44,9 @@ declare namespace fsync {
         y: number;
         width: number;
         height: number;
+        static reset(self: Rect): Rect;
+        static mergeFrom(self: Rect, rect: Rect): Rect;
+        static clone(self: Rect): Rect;
         static containPoint(rect: Rect, pt: IVector): bool;
         static limitPointSelf(rect: Rect, pt: IVector): void;
     }
@@ -1183,10 +1186,16 @@ declare namespace kitten.gamepad {
          * @param radius
          */
         getCircleRadius(): number;
+        touchRange: Rect;
+        /**
+         * 设置触控范围
+         * @param rect
+         */
+        setTouchRange(rect: Rect): void;
         /**
          * 获取触控范围
          */
-        protected getCtrlRange(): Rect;
+        protected getTouchRange(): Rect;
         /**
          * 处理触控输入
          * @param data
@@ -1204,7 +1213,7 @@ declare namespace kitten.gamepad {
          */
         protected detectVirtualCirleInput(data: kitten.uievent.UserInputData): boolean;
     }
-    export {};
+    export { };
 }
 declare namespace kitten.gamepad {
     /**
@@ -1232,7 +1241,7 @@ declare namespace kitten.gamepad {
     /**
      * 主技能摇杆
      */
-    class MainSkillStick extends CircleStick {
+    class MainSkillStick extends GameStick {
         handlerInput(data: kitten.uievent.UserInputData): boolean;
         /**
          * 检测鼠标控制技能方向
@@ -1245,7 +1254,7 @@ declare namespace kitten.gamepad {
     /**
      * 移动摇杆
      */
-    class MoveStick extends CircleStick {
+    class MoveStick extends GameStick {
         handlerInput(data: kitten.uievent.UserInputData): boolean;
         protected pressingKeys: {
             [key: string]: boolean;
@@ -1348,7 +1357,7 @@ declare namespace kitten.gamepad {
          */
         touchAction: TTouchAction;
     }
-    export {};
+    export { };
 }
 declare namespace kitten.guesture {
     type TouchPoint = fsync.Vector3;
@@ -3198,7 +3207,7 @@ declare namespace fsync {
             /** TDownloadProtoResult protoInfo. */
             protoInfo?: (ITProtoInfo | null);
         }
-        export {};
+        export { };
     }
 }
 declare namespace fsync {
@@ -3496,7 +3505,7 @@ declare namespace fsync {
         protected gameInputHandler: GameInputHandler[];
         addGameInputHandler(call: GameInputHandler): void;
     }
-    export {};
+    export { };
 }
 declare namespace fsync {
     class NetDelaySimulator {
