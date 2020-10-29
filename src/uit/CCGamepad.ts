@@ -23,33 +23,12 @@ namespace gcc.uit {
         }
 
         start() {
-            let syncViewData = (stick: kitten.gamepad.CircleStick, stickView: CCGameStick) => {
-                // 设置触摸范围
-                {
-                    let vec = transform.transformTool.convPos3ToVector(stickView.stickRange.convertToWorldSpaceAR(new cc.Vec3()))
-                    let rect = new fsync.Rect()
-                    rect.width = stickView.stickRange.width
-                    rect.height = stickView.stickRange.height
-                    rect.x = vec.x - rect.width / 2
-                    rect.y = vec.y - rect.height / 2
-                    stick.setTouchRange(rect)
-                }
-                // 设置触摸中心点
-                {
-                    let vec = transform.transformTool.convPos3ToVector(stickView.stickCenter.convertToWorldSpaceAR(new cc.Vec3()))
-                    stick.setStartPosOrigin(vec)
-                    let r = (stickView.stickCenter.width + stickView.stickCenter.height) / 2
-                    stick.setCircleRadius(r / 2)
-                    stick.resetTouchPoint()
-                }
-            }
-            syncViewData(this.gamepad.leftStick, this.leftStick)
-            syncViewData(this.gamepad.rightStick, this.rightStick)
-            let i = 1
+            this.leftStick.syncViewData(this.gamepad.leftStick)
+            this.rightStick.syncViewData(this.gamepad.rightStick)
             for (let stickView of this.skillSticks) {
                 let stick = new kitten.gamepad.CircleStick().init(`skill_${stickView.stickRange.parent.getSiblingIndex()}`)
-                syncViewData(stick, stickView)
                 this.gamepad.virutalCtrls.push(stick)
+                stickView.syncViewData(stick)
             }
             if (this.toDrawDebugView) {
                 this.gamepad.setupSimpleView()
@@ -62,28 +41,8 @@ namespace gcc.uit {
             let skillStickViews = [this.leftStick, this.rightStick].concat(this.skillSticks)
             this.gamepad.virutalCtrls.forEach((stick, index) => {
                 let stickView = skillStickViews[index]
-                if (stickView.stickCenter) {
-                    // 更新摇杆中心点视图位置
-                    let ctrlCenter = stick.getCtrlCenterPos()
-                    let pos = stickView.stickCenter.parent.convertToNodeSpaceAR(transform.transformTool.convVectorToPos3(ctrlCenter))
-                    stickView.stickCenter.position = pos
-                }
-                if (stickView.stickTouchPoint) {
-                    // 更新摇杆触摸点视图位置
-                    let ctrlCenter = stick.getCtrlCenterPos()
-                    let touchPoint = stick.ctrlStatus.touchPoint
-
-                    let offset = fsync.Vector.subDown(touchPoint.clone(), ctrlCenter)
-                    if (fsync.Vector.len(offset) > stick.getCircleRadius()) {
-                        fsync.Vector.multUpVar(fsync.Vector.normalizeSelf(offset), stick.getCircleRadius())
-                        let pos = fsync.Vector.addUp(offset, ctrlCenter)
-                        let ccpos = stickView.stickTouchPoint.parent.convertToNodeSpaceAR(transform.transformTool.convVectorToPos3(pos))
-                        stickView.stickTouchPoint.position = ccpos
-                    } else {
-                        let ccpos = stickView.stickTouchPoint.parent.convertToNodeSpaceAR(transform.transformTool.convVectorToPos3(touchPoint))
-                        stickView.stickTouchPoint.position = ccpos
-                    }
-                }
+                stickView.stick = stick
+                stickView.updateView()
             })
         }
 
