@@ -45,8 +45,9 @@ namespace gcc.uit {
             }
             syncViewData(this.gamepad.leftStick, this.leftStick)
             syncViewData(this.gamepad.rightStick, this.rightStick)
+            let i = 1
             for (let stickView of this.skillSticks) {
-                let stick = new kitten.gamepad.CircleStick().init(`skill_${stickView.stickRange.getSiblingIndex()}`)
+                let stick = new kitten.gamepad.CircleStick().init(`skill_${stickView.stickRange.parent.getSiblingIndex()}`)
                 syncViewData(stick, stickView)
                 this.gamepad.virutalCtrls.push(stick)
             }
@@ -58,7 +59,7 @@ namespace gcc.uit {
         }
 
         updateView() {
-            let skillStickViews = this.skillSticks.concat([this.leftStick, this.rightStick])
+            let skillStickViews = [this.leftStick, this.rightStick].concat(this.skillSticks)
             this.gamepad.virutalCtrls.forEach((stick, index) => {
                 let stickView = skillStickViews[index]
                 if (stickView.stickCenter) {

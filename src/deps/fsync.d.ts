@@ -92,12 +92,12 @@ declare namespace fsync {
         get y(): number;
         set y(value: number);
         copyXYLike({ x, y }: {
-            x: number;
-            y: number;
+            x?: number;
+            y?: number;
         }): void;
         static fromXYZLike({ x, y }: {
-            x: number;
-            y: number;
+            x?: number;
+            y?: number;
         }): Vector2;
     }
     class Vector3 {
@@ -115,14 +115,14 @@ declare namespace fsync {
         get z(): number;
         set z(value: number);
         copyXYZLike({ x, y, z }: {
-            x: number;
-            y: number;
-            z: number;
+            x?: number;
+            y?: number;
+            z?: number;
         }): void;
         static fromXYZLike({ x, y, z }: {
-            x: number;
-            y: number;
-            z: number;
+            x?: number;
+            y?: number;
+            z?: number;
         }): Vector3;
     }
     class Vector4 {
@@ -455,7 +455,7 @@ declare namespace fsync {
         getComponentOwnerEntity(comp: IComponent): Entity;
         getComponents(entity: Entity): IComponent[];
         getComponentsWithComponent(entity: Entity, t: new () => IComponent): IComponent[];
-        forEachEntities(componentTypes: ComponentType[], call: (entity: Entity) => void | bool): void;
+        forEachEntities(componentTypes: ComponentType[], withoutComponentTypes: ComponentType[], call: (entity: Entity) => void | bool): void;
         existsEntity(entity: Entity): bool;
         clearEntities(): void;
     }
@@ -511,12 +511,33 @@ declare namespace fsync {
         getComponentById<T extends IComponent = IComponent>(entity: Entity, compId: string): T;
         getComponentByType<T extends IComponent = IComponent>(entity: Entity, componentType: string): T;
         getComponent<T extends IComponent = IComponent>(entity: Entity, t: new () => T): T;
+        getOrAddComponent<T extends IComponent = IComponent>(entity: Entity, t: new () => T): T;
         existComponent<T extends IComponent = IComponent>(entity: Entity, t: new () => T): bool;
         getEntityCount(): number;
         getComponentOwnerEntity(comp: IComponent): Entity;
+        /**
+         * 复制entity
+         * @param entity
+         * @param targetManager
+         */
         cloneEntity(entity: Entity, targetManager: EntityManager): Entity;
+        /**
+         * 完全重置覆盖
+         * @param entity
+         * @param targetManager
+         */
         overwriteEntity(entity: Entity, targetManager: EntityManager): void;
+        /**
+         * 清空所有entity
+         */
         clearEntities(): void;
+        /**
+         * 设置组件数据
+         * @param entity
+         * @param tcomp
+         * @param compData
+         */
+        setComponentData<T extends fsync.IComponent>(entity: fsync.Entity, tcomp: fsync.TClass<T>, compData: T): T;
     }
 }
 declare namespace fsync {
@@ -529,8 +550,10 @@ declare namespace fsync {
     class EntityQuery implements IEntityQuery {
         entityManager: EntityManager;
         componentTypes: ComponentType[];
+        withoutComponentTypes: ComponentType[];
         init(entityManager: EntityManager): EntityQuery;
         with(componentType: ComponentType | (new () => IComponent)): EntityQuery;
+        without(componentType: ComponentType | (new () => IComponent)): EntityQuery;
         forEach(call: (entity: Entity) => void): EntityQuery;
         forEachWithComps(call: (entity: Entity, ...comps: fsync.IComponent[]) => void): EntityQuery;
         toArray(): Entity[];
@@ -663,16 +686,41 @@ declare namespace fsync {
 }
 declare namespace fsync {
     class Timer implements IMerge<Timer> {
+        /**
+         * 外界实际当前时间点
+         */
         protected _curTimeRecord: TTimeStamp;
+        /**
+         * 游戏内部当前时间点
+         */
         protected _curTime: TTimeStamp;
+        /**
+         * 当前帧间间隔
+         */
         protected _deltaTime: TTimeStamp;
-        protected _maxTime: TTimeStamp;
+        /**
+         * 最大帧间隔,用于提升断点调试体验
+         */
+        protected _maxDeltaTime: TTimeStamp;
+        /**
+         * 游戏开始时间点
+         */
+        protected _startTime: TTimeStamp;
         init(): void;
         /**
-         * 获取当前时间戳
+         * 获取当前游戏时间戳
          */
         getTime(): TTimeStamp;
         updateTime(time: TTimeStamp): void;
+        /**
+         * 重设游戏开始时间点
+         * @param time
+         */
+        setStartTime(time: TTimeStamp): void;
+        /**
+         * 游戏已进行时长
+         */
+        getGameTime(): TTimeStamp;
         setTime(time: TTimeStamp): void;
         get deltaTime(): TTimeStamp;
         mergeFrom(timer: Timer): void;
@@ -1135,22 +1183,28 @@ declare namespace kitten.gamepad {
          */
         identity: string;
         /**
-         * 控制器轴心位置
-         */
-        protected ctrlPos: Vector3;
-        /**
         * 控制器轴心起始位置
         */
         protected ctrlPosOrigin: Vector3;
         /**
+         * 获取输入端口列表
+         */
+        getInputPorts(): string[];
+        protected inputPorts: string[];
+        protected updateInputPorts(): void;
+        get ctrlStatus(): StickCtrlState;
+        /**
          * 获取触控范围中心店
          */
         getCtrlCenterPos(): fsync.Vector3;
-        /**
-         * 控制器状态
-         */
-        ctrlStatus: StickCtrlState;
         protected lastCtrlStatus: StickLastCtrlState;
+        /**
+         * 控制器内部状态
+         */
+        protected ctrlStatusRaw: StickCtrlState;
+        /**
+         * 控制器对外状态
+         */
         updateStatus(): void;
         updateTouchAction(): void;
         /**
@@ -1208,6 +1262,9 @@ declare namespace kitten.gamepad {
         protected multiTouchMap: {
             [id: string]: string;
         };
+        protected static multiTouchMap: {
+            [id: string]: string;
+        };
         /**
          * 检测虚拟手柄输入
          * @param data
@@ -1259,9 +1316,14 @@ declare namespace kitten.gamepad {
      */
     class MoveStick extends GameStick {
         handlerInput(data: kitten.uievent.UserInputData): boolean;
+        /**
+        * 获取输入端口列表
+        */
+        getInputPorts(): string[];
         protected pressingKeys: {
             [key: string]: boolean;
         };
+        protected isKeyPressing: boolean;
         protected updateKeyboardInputStatus(): void;
         /**
          * 检测键盘输入控制
@@ -1359,6 +1421,10 @@ declare namespace kitten.gamepad {
          * 触摸操控状态
          */
         touchAction: TTouchAction;
+        /**
+         * 控制器轴心位置
+         */
+        ctrlPos: Vector3;
     }
     export { };
 }
@@ -1865,7 +1931,7 @@ declare namespace fsync {
         static NormalSystem: string;
         static MergeSystem: string;
         static InputSystem: string;
-        static SyncViewSystem: "SyncViewSystem";
+        static SyncViewSystem: string;
     }
     class WorldMainProcess {
         /**
