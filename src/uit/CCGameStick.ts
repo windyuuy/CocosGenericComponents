@@ -48,12 +48,8 @@ namespace gcc.uit {
 			}
 		}
 
-		updateView() {
+		updateMainView() {
 			let stick = this.stick
-			if (stick == null) {
-				return
-			}
-
 			let stickView = this
 			if (stickView.stickCenter) {
 				// 更新摇杆中心点视图位置
@@ -77,7 +73,11 @@ namespace gcc.uit {
 					stickView.stickTouchPoint.position = ccpos
 				}
 			}
+		}
 
+		updateDetailView() {
+			let stick = this.stick
+			let stickView = this
 			// 其他更新
 			if (stickView.stickTouchPoint) {
 				if (stick.ctrlStatus.pressed) {
@@ -86,6 +86,15 @@ namespace gcc.uit {
 					stickView.stickTouchPoint.scale = 1
 				}
 			}
+		}
+		updateView() {
+			let stick = this.stick
+			if (stick == null) {
+				return
+			}
+
+			this.updateMainView()
+			this.updateDetailView()
 		}
 	}
 }
