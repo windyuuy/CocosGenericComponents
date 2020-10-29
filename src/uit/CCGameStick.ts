@@ -77,6 +77,15 @@ namespace gcc.uit {
 					stickView.stickTouchPoint.position = ccpos
 				}
 			}
+
+			// 其他更新
+			if (stickView.stickTouchPoint) {
+				if (stick.ctrlStatus.pressed) {
+					stickView.stickTouchPoint.scale = 1.22
+				} else {
+					stickView.stickTouchPoint.scale = 1
+				}
+			}
 		}
 	}
 }
