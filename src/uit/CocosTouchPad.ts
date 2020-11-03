@@ -45,11 +45,11 @@ namespace gcc.uit {
 			// vecs.push(new fsync.Vector3())
 		}
 
-        /**
-         * 注册触摸板事件
-         * @param touchPad
-         * @param useCapture 将触摸或鼠标事件注册在捕获阶段
-         */
+		/**
+		 * 注册触摸板事件
+		 * @param touchPad
+		 * @param useCapture 将触摸或鼠标事件注册在捕获阶段
+		 */
 		registerTouchPad(touchPad: cc.Node, useCapture: boolean = false) {
 			const touchedPointMap: { [key: string]: boolean } = {}
 

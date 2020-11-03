@@ -20,9 +20,7 @@ namespace gcc.uit {
 
         onLoad() {
             this.gamepad = new kitten.gamepad.NormalGamepad().init()
-        }
 
-        start() {
             this.leftStick.syncViewData(this.gamepad.leftStick)
             this.rightStick.syncViewData(this.gamepad.rightStick)
             for (let stickView of this.skillSticks) {
@@ -37,9 +35,23 @@ namespace gcc.uit {
             this.updateView()
         }
 
-        updateView() {
+        start() {
+
+        }
+
+        updateViewVisible() {
             let skillStickViews = [this.leftStick, this.rightStick].concat(this.skillSticks)
-            console.log(this.gamepad.virutalCtrls.map(ctrl => ctrl.ctrlStatus.ctrlPos))
+            let sticks = this.gamepad.virutalCtrls
+            skillStickViews.forEach((view, index) => {
+                let stick = sticks[index]
+                view.viewNode.active = stick.enable
+            })
+        }
+
+        updateView() {
+            this.updateViewVisible()
+
+            let skillStickViews = [this.leftStick, this.rightStick].concat(this.skillSticks)
             this.gamepad.virutalCtrls.forEach((stick, index) => {
                 let stickView = skillStickViews[index]
                 stickView.stick = stick
@@ -49,6 +61,10 @@ namespace gcc.uit {
 
         protected update(dt: number) {
             this.updateView()
+        }
+
+        setSkillEnabled(index: number, b: boolean) {
+            this.gamepad.virutalCtrls[index].enable = b
         }
 
     }

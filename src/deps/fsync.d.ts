@@ -39,11 +39,26 @@ declare namespace fsync.math {
     const calcMinAngle: (angle: number) => number;
 }
 declare namespace fsync {
+    interface IBLWHRectSpec {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    }
+    /**
+     * Rect = 左下角 + size
+     */
     class Rect {
         x: number;
         y: number;
         width: number;
         height: number;
+        constructor(x?: number, y?: number, width?: number, height?: number);
+        static top(self: Rect): Vector2;
+        static bottom(self: Rect): Vector2;
+        static center(self: Rect): Vector2;
+        static fromRectLike({ x, y, width, height }: IBLWHRectSpec): Rect;
+        static copyRectLike(self: Rect, { x, y, width, height }: IBLWHRectSpec): Rect;
         static reset(self: Rect): Rect;
         static mergeFrom(self: Rect, rect: Rect): Rect;
         static clone(self: Rect): Rect;
@@ -84,13 +99,23 @@ declare namespace fsync {
         static zero: Vector2;
         static fromNumArray(ns: number[]): Vector2;
         clone(): Vector2;
-        constructor(value?: number);
+        /**
+         * Vector3.constructor
+         * @param x 默认等于 0
+         * @param y 默认等于 x
+         */
+        constructor(x?: number, y?: number);
+        /**
+         * vector的尺寸, vector2 为 2
+         */
+        get size(): number;
         getBinData(): number[];
         setBinData(data: number[]): void;
         get x(): number;
         set x(value: number);
         get y(): number;
         set y(value: number);
+        copy(vec: IVector): IVector;
         copyXYLike({ x, y }: {
             x?: number;
             y?: number;
@@ -105,7 +130,17 @@ declare namespace fsync {
         static zero: Vector3;
         static fromNumArray(ns: number[]): Vector3;
         clone(): Vector3;
-        constructor(value?: number);
+        /**
+         * Vector3.constructor
+         * @param x 默认等于 0
+         * @param y 默认等于 x
+         * @param z 默认等于 y
+         */
+        constructor(x?: number, y?: number, z?: number);
+        /**
+         * vector的尺寸, vector3 为 3
+         */
+        get size(): number;
         getBinData(): number[];
         setBinData(data: number[]): void;
         get x(): number;
@@ -114,11 +149,12 @@ declare namespace fsync {
         set y(value: number);
         get z(): number;
         set z(value: number);
+        copy(vec: IVector): IVector;
         copyXYZLike({ x, y, z }: {
             x?: number;
             y?: number;
             z?: number;
-        }): void;
+        }): this;
         static fromXYZLike({ x, y, z }: {
             x?: number;
             y?: number;
@@ -129,7 +165,16 @@ declare namespace fsync {
         protected data: number[];
         static fromNumArray(ns: number[]): Vector4;
         clone(): Vector4;
-        constructor(value?: number);
+        /**
+         * Vector3.constructor
+         * @param x 默认等于 0
+         * @param y 默认等于 x
+         */
+        constructor(x?: number, y?: number, z?: number, w?: number);
+        /**
+         * vector的尺寸, vector4 为 4
+         */
+        get size(): number;
         getBinData(): number[];
         setBinData(data: number[]): void;
         get x(): number;
@@ -140,6 +185,7 @@ declare namespace fsync {
         set z(value: number);
         get w(): number;
         set w(value: number);
+        copy(vec: IVector): IVector;
     }
     class Vector {
         protected static _fromNumArray3(ns: number[]): Vector3;
@@ -192,12 +238,23 @@ declare namespace fsync {
     }
 }
 declare namespace fsync {
+    interface ISize2Spec {
+        width?: number;
+        height?: number;
+    }
     class Size2 extends Vector2 {
         constructor(width?: number, height?: number);
         get width(): number;
         set width(n: number);
         get height(): number;
         set height(n: number);
+        static fromSize2Like(size2: ISize2Spec): Size2;
+        copySize2ike({ width, height }: ISize2Spec): this;
+    }
+    interface ISize3Spec {
+        width?: number;
+        height?: number;
+        depth?: number;
     }
     class Size3 extends Vector3 {
         constructor(width?: number, height?: number, depth?: number);
@@ -207,6 +264,8 @@ declare namespace fsync {
         set height(n: number);
         get depth(): number;
         set depth(n: number);
+        static fromSize3Like(size3: ISize3Spec): Size3;
+        copySize3ike({ width, height, depth }: ISize3Spec): this;
     }
 }
 declare namespace lang.helper {
@@ -1177,7 +1236,7 @@ declare namespace kitten.gamepad {
         /**
          * 是否启用
          */
-        protected enable: boolean;
+        enable: boolean;
         /**
          * 控制器id
          */
@@ -1256,6 +1315,7 @@ declare namespace kitten.gamepad {
          * @param data
          */
         handlerInput(data: kitten.uievent.UserInputData): boolean;
+        cleanTouchMap(): void;
         /**
          * 触摸状态map
          */

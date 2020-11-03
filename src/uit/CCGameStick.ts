@@ -4,6 +4,13 @@ namespace gcc.uit {
 
 	// @ccclass("CCGamepad")
 	export class CCGameStick {
+
+		/**
+		 * 整体节点
+		 */
+		@property({ type: cc.Node, displayName: "整体节点" })
+		viewNode: cc.Node = null
+
 		/**
 		 * 触摸区域
 		 */
@@ -96,5 +103,6 @@ namespace gcc.uit {
 			this.updateMainView()
 			this.updateDetailView()
 		}
+
 	}
 }
