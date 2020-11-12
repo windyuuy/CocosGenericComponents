@@ -6,8 +6,16 @@ namespace gcc.box2d.tools {
         return fsync.Vector2.fromXYZLike(vec2)
     }
 
+    function convCCVec3(vec3: cc.Vec3) {
+        return fsync.Vector3.fromXYZLike(vec3)
+    }
+
     function convCCSize2(size2: cc.Size) {
         return fsync.Size2.fromSize2Like(size2)
+    }
+
+    function convCCSize3(size3: cc.Size) {
+        return fsync.Size3.fromSize3Like(size3)
     }
 
     export class Box2DExport {
@@ -15,6 +23,7 @@ namespace gcc.box2d.tools {
 
         writeFile(fileName: string, ss: string) {
             if (window["Editor"]) {
+                // console.log("export file:", fileName)
                 Editor.warn("export file:", fileName)
                 const fs = window['require']('fs');
                 fs.writeFileSync(fileName, ss)
@@ -56,7 +65,17 @@ namespace gcc.box2d.tools {
                     b2Body.components.push(b2Comp)
                 }
             }
+            {
+                let b2Comp = this.handleTransform(node)
+                b2Body.components.push(b2Comp)
+            }
             return b2Body
+        }
+
+        handleTransform(node: cc.Node) {
+            let transform = new b2data.Transform()
+            transform.position = convCCVec3(node.position)
+            return transform
         }
 
         handleBox2dComponent(comp: cc.Component) {
@@ -122,6 +141,19 @@ namespace gcc.box2d.tools {
             if (comp) {
                 let dataComp = new b2data.RigidBody()
                 dataComp.oid = comp.uuid
+                dataComp.enabledContactListener = comp.enabledContactListener
+                dataComp.bullet = comp.bullet
+                dataComp.type = comp.type
+                dataComp.allowSleep = comp.allowSleep
+                dataComp.gravityScale = comp.gravityScale
+                dataComp.linearDamping = comp.linearDamping
+                dataComp.angularDamping = comp.angularDamping
+                dataComp.linearVelocity = convCCVec2(comp.linearVelocity)
+                dataComp.angularVelocity = comp.angularVelocity
+                dataComp.fixedRotation = comp.fixedRotation
+                dataComp.awake = comp.awake
+                dataComp.awakeOnLoad = comp.awakeOnLoad
+                dataComp.active = comp.active
                 return dataComp
             }
         }
