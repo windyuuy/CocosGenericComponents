@@ -100,9 +100,9 @@ declare namespace fsync {
         static fromNumArray(ns: number[]): Vector2;
         clone(): Vector2;
         /**
-         * Vector3.constructor
+         * Vector2.constructor
          * @param x 默认等于 0
-         * @param y 默认等于 x
+         * @param y 默认等于 0
          */
         constructor(x?: number, y?: number);
         /**
@@ -125,16 +125,22 @@ declare namespace fsync {
             y?: number;
         }): Vector2;
     }
+    interface IVector3SpecInput {
+        x?: number;
+        y?: number;
+        z?: number;
+    }
     class Vector3 {
         protected data: number[];
         static zero: Vector3;
         static fromNumArray(ns: number[]): Vector3;
+        copyNumArray(ns: number[]): Vector3;
         clone(): Vector3;
         /**
          * Vector3.constructor
          * @param x 默认等于 0
-         * @param y 默认等于 x
-         * @param z 默认等于 y
+         * @param y 默认等于 0
+         * @param z 默认等于 0
          */
         constructor(x?: number, y?: number, z?: number);
         /**
@@ -150,25 +156,21 @@ declare namespace fsync {
         get z(): number;
         set z(value: number);
         copy(vec: IVector): IVector;
-        copyXYZLike({ x, y, z }: {
-            x?: number;
-            y?: number;
-            z?: number;
-        }): this;
-        static fromXYZLike({ x, y, z }: {
-            x?: number;
-            y?: number;
-            z?: number;
-        }): Vector3;
+        copyXYZLike({ x, y, z }: IVector3SpecInput): this;
+        static fromXYZLike({ x, y, z }: IVector3SpecInput): Vector3;
+        toXYZLike<T extends IVector3SpecInput>(cls: new () => T): T;
+        mergeToXYZLike<T extends IVector3SpecInput>(v: T): T;
     }
     class Vector4 {
         protected data: number[];
         static fromNumArray(ns: number[]): Vector4;
         clone(): Vector4;
         /**
-         * Vector3.constructor
+         * Vector4.constructor
          * @param x 默认等于 0
-         * @param y 默认等于 x
+         * @param y 默认等于 0
+         * @param z 默认等于 0
+         * @param w 默认等于 0
          */
         constructor(x?: number, y?: number, z?: number, w?: number);
         /**
@@ -268,6 +270,420 @@ declare namespace fsync {
         copySize3ike({ width, height, depth }: ISize3Spec): this;
     }
 }
+declare namespace fsync.box2d.b2data {
+    export import Vec2 = fsync.Vector2;
+    export import Vec3 = fsync.Vector3;
+    export import Vec4 = fsync.Vector4;
+    export import Size = fsync.Size2;
+    class Component {
+        oid: string;
+        ctype: string;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en Defines a Box Collider .
+!#zh 用来定义包围盒碰撞体 */
+    class Box {
+        /** !#en Position offset
+        !#zh 位置偏移量 */
+        offset: Vec2;
+        /** !#en Box size
+        !#zh 包围盒大小 */
+        size: Size;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en Defines a Circle Collider .
+    !#zh 用来定义圆形碰撞体 */
+    class Circle {
+        /** !#en Position offset
+        !#zh 位置偏移量 */
+        offset: Vec2;
+        /** !#en Circle radius
+        !#zh 圆形半径 */
+        radius: number;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en
+        Base class for joints to connect rigidbody.
+        !#zh
+        关节类的基类 */
+    class Joint extends Component {
+        /** !#en
+        The anchor of the rigidbody.
+        !#zh
+        刚体的锚点。 */
+        anchor: Vec2;
+        /** !#en
+        The anchor of the connected rigidbody.
+        !#zh
+        关节另一端刚体的锚点。 */
+        connectedAnchor: Vec2;
+        /** !#en
+        The rigidbody to which the other end of the joint is attached.
+        !#zh
+        关节另一端链接的刚体 */
+        connectedBody: RigidBody;
+        /** !#en
+        Should the two rigid bodies connected with this joint collide with each other?
+        !#zh
+        链接到关节上的两个刚体是否应该相互碰撞？ */
+        collideConnected: boolean;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    class Transform extends Component {
+        position: Vec3;
+    }
+    class Box2DBody {
+        name: string;
+        components: Component[];
+    }
+    class Box2DNode {
+        name: string;
+        children: Box2DBody[];
+    }
+}
+declare namespace fsync.box2d.b2data {
+    function toExpression(varname: string | number | boolean): string | number | boolean;
+    function exportValueToTypescript(sentences: string[], depth: number, parentName: string, varname: string | number, node: string | number | boolean): void;
+    function exportArrayToTypescript(sentences: string[], depth: number, parentName: string, varname: string | number, node: Object): void;
+    function exportObjectToTypescript(sentences: string[], depth: number, parentName: string, varname: string | number, node: Object): void;
+    function exportB2NodeToTypescript(b2Node: Box2DNode): string[];
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en Collider component base class.
+        !#zh 碰撞组件基类 */
+    class Collider extends Component {
+        /** !#en Tag. If a node has several collider components, you can judge which type of collider is collided according to the tag.
+        !#zh 标签。当一个节点上有多个碰撞组件时，在发生碰撞后，可以使用此标签来判断是节点上的哪个碰撞组件被碰撞了。 */
+        tag: number;
+    }
+    /** !#en Defines a Polygon Collider .
+        !#zh 用来定义多边形碰撞体 */
+    class Polygon {
+        /** !#en Position offset
+        !#zh 位置偏移量 */
+        offset: Vec2;
+        /** !#en Polygon points
+        !#zh 多边形顶点数组 */
+        points: Vec2[];
+    }
+    /** undefined */
+    class PhysicsCollider extends Collider {
+        /** !#en
+        The density.
+        !#zh
+        密度 */
+        density: number;
+        /** !#en
+        A sensor collider collects contact information but never generates a collision response
+        !#zh
+        一个传感器类型的碰撞体会产生碰撞回调，但是不会发生物理碰撞效果。 */
+        sensor: boolean;
+        /** !#en
+        The friction coefficient, usually in the range [0,1].
+        !#zh
+        摩擦系数，取值一般在 [0, 1] 之间 */
+        friction: number;
+        /** !#en
+        The restitution (elasticity) usually in the range [0,1].
+        !#zh
+        弹性系数，取值一般在 [0, 1]之间 */
+        restitution: number;
+        /** !#en
+        Physics collider will find the rigidbody component on the node and set to this property.
+        !#zh
+        碰撞体会在初始化时查找节点上是否存在刚体，如果查找成功则赋值到这个属性上。 */
+        body: RigidBody;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** undefined */
+    class PhysicsBoxCollider extends PhysicsCollider implements Box {
+        /** !#en Position offset
+        !#zh 位置偏移量 */
+        offset: Vec2;
+        /** !#en Box size
+        !#zh 包围盒大小 */
+        size: Size;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** undefined */
+    class PhysicsCircleCollider extends PhysicsCollider implements Circle {
+        /** !#en Position offset
+        !#zh 位置偏移量 */
+        offset: Vec2;
+        /** !#en Circle radius
+        !#zh 圆形半径 */
+        radius: number;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** undefined */
+    class PhysicsPolygonCollider extends PhysicsCollider implements Polygon {
+        /** !#en Position offset
+        !#zh 位置偏移量 */
+        offset: Vec2;
+        /** !#en Polygon points
+        !#zh 多边形顶点数组 */
+        points: Vec2[];
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en
+    A prismatic joint. This joint provides one degree of freedom: translation
+    along an axis fixed in rigidbody. Relative rotation is prevented. You can
+    use a joint limit to restrict the range of motion and a joint motor to
+    drive the motion or to model joint friction.
+    !#zh
+    移动关节指定了只能在一个方向上移动刚体。
+    你可以开启关节限制来设置刚体运行移动的间距，也可以开启马达来使用关节马达驱动刚体的运行。 */
+    class PrismaticJoint extends Joint {
+        /** !#en
+        The local joint axis relative to rigidbody.
+        !#zh
+        指定刚体可以移动的方向。 */
+        localAxisA: Vec2;
+        /** !#en
+        The reference angle.
+        !#zh
+        相对角度 */
+        referenceAngle: number;
+        /** !#en
+        Enable joint distance limit?
+        !#zh
+        是否开启关节的距离限制？ */
+        enableLimit: boolean;
+        /** !#en
+        Enable joint motor?
+        !#zh
+        是否开启关节马达？ */
+        enableMotor: boolean;
+        /** !#en
+        The lower joint limit.
+        !#zh
+        刚体能够移动的最小值 */
+        lowerLimit: number;
+        /** !#en
+        The upper joint limit.
+        !#zh
+        刚体能够移动的最大值 */
+        upperLimit: number;
+        /** !#en
+        The maxium force can be applied to rigidbody to rearch the target motor speed.
+        !#zh
+        可以施加到刚体的最大力。 */
+        maxMotorForce: number;
+        /** !#en
+        The expected motor speed.
+        !#zh
+        期望的马达速度。 */
+        motorSpeed: number;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en
+    A revolute joint constrains two bodies to share a common point while they
+    are free to rotate about the point. The relative rotation about the shared
+    point is the joint angle. You can limit the relative rotation with
+    a joint limit that specifies a lower and upper angle. You can use a motor
+    to drive the relative rotation about the shared point. A maximum motor torque
+    is provided so that infinite forces are not generated.
+    !#zh
+    旋转关节可以约束两个刚体围绕一个点来进行旋转。
+    你可以通过开启关节限制来限制旋转的最大角度和最小角度。
+    你可以通过开启马达来施加一个扭矩力来驱动这两个刚体在这一点上的相对速度。 */
+    class RevoluteJoint extends Joint {
+        /** !#en
+        The reference angle.
+        An angle between bodies considered to be zero for the joint angle.
+        !#zh
+        相对角度。
+        两个物体之间角度为零时可以看作相等于关节角度 */
+        referenceAngle: number;
+        /** !#en
+        The lower angle.
+        !#zh
+        角度的最低限制。 */
+        lowerAngle: number;
+        /** !#en
+        The upper angle.
+        !#zh
+        角度的最高限制。 */
+        upperAngle: number;
+        /** !#en
+        The maxium torque can be applied to rigidbody to rearch the target motor speed.
+        !#zh
+        可以施加到刚体的最大扭矩。 */
+        maxMotorTorque: number;
+        /** !#en
+        The expected motor speed.
+        !#zh
+        期望的马达速度。 */
+        motorSpeed: number;
+        /** !#en
+        Enable joint limit?
+        !#zh
+        是否开启关节的限制？ */
+        enableLimit: boolean;
+        /** !#en
+        Enable joint motor?
+        !#zh
+        是否开启关节马达？ */
+        enableMotor: boolean;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en Enum for RigidBodyType.
+    !#zh 刚体类型 */
+    enum RigidBodyType {
+        Static = 0,
+        Kinematic = 0,
+        Dynamic = 0,
+        Animated = 0
+    }
+    /** undefined */
+    class RigidBody extends Component {
+        /** !#en
+        Should enabled contact listener?
+        When a collision is trigger, the collision callback will only be called when enabled contact listener.
+        !#zh
+        是否启用接触接听器。
+        当 collider 产生碰撞时，只有开启了接触接听器才会调用相应的回调函数 */
+        enabledContactListener: boolean;
+        /** !#en
+        Is this a fast moving body that should be prevented from tunneling through
+        other moving bodies?
+        Note :
+        - All bodies are prevented from tunneling through kinematic and static bodies. This setting is only considered on dynamic bodies.
+        - You should use this flag sparingly since it increases processing time.
+        !#zh
+        这个刚体是否是一个快速移动的刚体，并且需要禁止穿过其他快速移动的刚体？
+        需要注意的是 :
+         - 所有刚体都被禁止从 运动刚体 和 静态刚体 中穿过。此选项只关注于 动态刚体。
+         - 应该尽量少的使用此选项，因为它会增加程序处理时间。 */
+        bullet: boolean;
+        /** !#en
+        Rigidbody type : Static, Kinematic, Dynamic or Animated.
+        !#zh
+        刚体类型： Static, Kinematic, Dynamic or Animated. */
+        type: RigidBodyType;
+        /** !#en
+        Set this flag to false if this body should never fall asleep.
+        Note that this increases CPU usage.
+        !#zh
+        如果此刚体永远都不应该进入睡眠，那么设置这个属性为 false。
+        需要注意这将使 CPU 占用率提高。 */
+        allowSleep: boolean;
+        /** !#en
+        Scale the gravity applied to this body.
+        !#zh
+        缩放应用在此刚体上的重力值 */
+        gravityScale: number;
+        /** !#en
+        Linear damping is use to reduce the linear velocity.
+        The damping parameter can be larger than 1, but the damping effect becomes sensitive to the
+        time step when the damping parameter is large.
+        !#zh
+        Linear damping 用于衰减刚体的线性速度。衰减系数可以大于 1，但是当衰减系数比较大的时候，衰减的效果会变得比较敏感。 */
+        linearDamping: number;
+        /** !#en
+        Angular damping is use to reduce the angular velocity. The damping parameter
+        can be larger than 1 but the damping effect becomes sensitive to the
+        time step when the damping parameter is large.
+        !#zh
+        Angular damping 用于衰减刚体的角速度。衰减系数可以大于 1，但是当衰减系数比较大的时候，衰减的效果会变得比较敏感。 */
+        angularDamping: number;
+        /** !#en
+        The linear velocity of the body's origin in world co-ordinates.
+        !#zh
+        刚体在世界坐标下的线性速度 */
+        linearVelocity: Vec2;
+        /** !#en
+        The angular velocity of the body.
+        !#zh
+        刚体的角速度 */
+        angularVelocity: number;
+        /** !#en
+        Should this body be prevented from rotating?
+        !#zh
+        是否禁止此刚体进行旋转 */
+        fixedRotation: boolean;
+        /** !#en
+        Set the sleep state of the body. A sleeping body has very low CPU cost.(When the rigid body is hit, if the rigid body is in sleep state, it will be immediately awakened.)
+        !#zh
+        设置刚体的睡眠状态。 睡眠的刚体具有非常低的 CPU 成本。（当刚体被碰撞到时，如果刚体处于睡眠状态，它会立即被唤醒） */
+        awake: boolean;
+        /** !#en
+        Whether to wake up this rigid body during initialization
+        !#zh
+        是否在初始化时唤醒此刚体 */
+        awakeOnLoad: boolean;
+        /** !#en
+        Set the active state of the body. An inactive body is not
+        simulated and cannot be collided with or woken up.
+        If body is active, all fixtures will be added to the
+        broad-phase.
+        If body is inactive, all fixtures will be removed from
+        the broad-phase and all contacts will be destroyed.
+        Fixtures on an inactive body are implicitly inactive and will
+        not participate in collisions, ray-casts, or queries.
+        Joints connected to an inactive body are implicitly inactive.
+        !#zh
+        设置刚体的激活状态。一个非激活状态下的刚体是不会被模拟和碰撞的，不管它是否处于睡眠状态下。
+        如果刚体处于激活状态下，所有夹具会被添加到 粗测阶段（broad-phase）。
+        如果刚体处于非激活状态下，所有夹具会被从 粗测阶段（broad-phase）中移除。
+        在非激活状态下的夹具不会参与到碰撞，射线，或者查找中
+        链接到非激活状态下刚体的关节也是非激活的。 */
+        active: boolean;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en
+    A wheel joint. This joint provides two degrees of freedom: translation
+    along an axis fixed in bodyA and rotation in the plane. You can use a joint motor to drive
+    the rotation or to model rotational friction.
+    This joint is designed for vehicle suspensions.
+    !#zh
+    轮子关节提供两个维度的自由度：旋转和沿着指定方向上位置的移动。
+    你可以通过开启关节马达来使用马达驱动刚体的旋转。
+    轮组关节是专门为机动车类型设计的。 */
+    class WheelJoint extends Joint {
+        /** !#en
+        The local joint axis relative to rigidbody.
+        !#zh
+        指定刚体可以移动的方向。 */
+        localAxisA: Vec2;
+        /** !#en
+        The maxium torque can be applied to rigidbody to rearch the target motor speed.
+        !#zh
+        可以施加到刚体的最大扭矩。 */
+        maxMotorTorque: number;
+        /** !#en
+        The expected motor speed.
+        !#zh
+        期望的马达速度。 */
+        motorSpeed: number;
+        /** !#en
+        Enable joint motor?
+        !#zh
+        是否开启关节马达？ */
+        enableMotor: boolean;
+        /** !#en
+        The spring frequency.
+        !#zh
+        弹性系数。 */
+        frequency: number;
+        /** !#en
+        The damping ratio.
+        !#zh
+        阻尼，表示关节变形后，恢复到初始状态受到的阻力。 */
+        dampingRatio: number;
+    }
+}
 declare namespace lang.helper {
     class ArrayHelper {
         static max<T>(ls: T[], call: (e: T) => number): T | undefined;
@@ -361,7 +777,7 @@ declare namespace fsync {
     }
 }
 declare namespace fsync {
-    const EmptyTable: () => {};
+    const EmptyTable: () => any;
     class ObjectUtils {
         static copyDataDeep<T extends object>(source: T, target: T): T;
     }
@@ -458,6 +874,7 @@ declare namespace fsync {
         protected eid: EntityID;
         get identity(): EntityID;
         clone(): Entity;
+        static fromId(id: EntityID): Entity;
     }
 }
 declare namespace fsync {
@@ -477,27 +894,43 @@ declare namespace fsync {
      * 所有Entity 存储区域
      */
     class EntitiesContainer {
+        /**
+         * entityId -> map<componentId,bool>
+         */
         entityComponentMap: {
             [key: string]: {
                 [key: string]: bool;
             };
         };
+        /**
+         * entityId -> map<componentType,componentId>
+         */
         entityProtoMap: {
             [key: string]: {
-                [key: string]: bool;
+                [key: string]: ComponentID;
             };
         };
+        /**
+         * componentId -> entityId
+         */
         componentEntityMap: {
             [key: string]: EntityID;
         };
+        /**
+         * entityId -> entity
+         */
         entityMap: {
             [key: string]: Entity;
         };
+        /**
+         * componentId -> component
+         */
         componentMap: {
             [key: string]: IComponent;
         };
         init(): this;
         updateEntityProto(entity: Entity): void;
+        cleanEntityProtoMap(): void;
         addComponent(entity: Entity, comp: IComponent): void;
         removeComponentByType(entity: Entity, t: ComponentType): IComponent;
         removeComponentsByType(entity: Entity, t: ComponentType): void;
@@ -538,10 +971,12 @@ declare namespace fsync {
         identity: string;
         constructor();
         init(utils: FrameSyncUtils): void;
+        clearDirtyManager(): void;
         createQuery(): EntityQuery;
         createEntity(tcomps: (new () => IComponent)[]): Entity;
         protected decoComponent(entity: Entity, comp: IComponent): void;
         getEntityById(entityId: EntityID): Entity;
+        wrapEntityId(entityId: EntityID): Entity;
         addComponent<T extends IComponent = IComponent>(entity: Entity, tcomp: new () => T): T;
         attachComponent<T extends IComponent = IComponent>(entity: Entity, comp: T): T;
         addComponents(entity: Entity, tcomps: (new () => IComponent)[]): IComponent[];
@@ -551,7 +986,14 @@ declare namespace fsync {
         removeComponent<T extends IComponent = IComponent>(entity: Entity, t: new () => T): T;
         removeComponents<T extends IComponent = IComponent>(entity: Entity, t: new () => T): void;
         removeEntity(entity: Entity): void;
+        /**
+         * 检查entity是否有非空的identity
+         */
         isValidEntity(entity: Entity): bool;
+        /**
+         * 检查entity是否存在mananger中
+         * @param entity
+         */
         existsEntity(entity: Entity): bool;
         /**
          * 是否相同实体
@@ -586,6 +1028,7 @@ declare namespace fsync {
          * @param targetManager
          */
         overwriteEntity(entity: Entity, targetManager: EntityManager): void;
+        cleanEntityProtoMap(): void;
         /**
          * 清空所有entity
          */
@@ -678,7 +1121,12 @@ declare namespace fsync {
         getUpdaterGroup(groupName: string): UpdaterGroup;
         addUpdaterGroup(groupName: string, group: UpdaterGroup): void;
         setGroupUpdateOrder(updateOrder: string[]): void;
-        protected updateByOrder(call: (updater: UpdaterGroup) => void): void;
+        protected _disabledGroup: {
+            [key: string]: bool;
+        };
+        disableGroup(key: string): void;
+        enableGroup(key: string): void;
+        protected foreachByOrder(call: (updater: UpdaterGroup) => void): void;
         onBeforeUpdate(): void;
         update(): void;
         onAfterUpdate(): void;
@@ -805,6 +1253,410 @@ declare namespace fsync {
         update(): void;
         onAfterUpdate(): void;
     }
+}
+declare namespace fsync.ecsproxy.exports {
+}
+declare namespace fsync.ecsproxy {
+    /**
+     * comp 类装饰器
+     * @param target
+     */
+    function DecoCompProxy<T extends fsync.IComponent>(target: new () => T): void;
+    function DoDecoCompProxy<T extends fsync.IComponent>(target: new () => T): void;
+}
+declare namespace fsync.ecsproxy {
+    interface IECSComponentProxy {
+        readonly isNull: bool;
+        getOrAdd(): this;
+        setEntity(key: keyof this, entity: Entity): any;
+    }
+    /**
+     * 指代 entity 代理
+     */
+    interface IECSComponentAttrProxyBase extends IECSComponentProxy {
+        __entityManager: fsync.EntityManager;
+        __entity: fsync.Entity;
+        __comp: fsync.IComponent;
+        setComp(comp: fsync.IComponent): any;
+        __compClass: new () => fsync.IComponent;
+        setCompCls(cls: new () => fsync.IComponent): any;
+    }
+    /**
+     * 指代 entity array 代理
+     */
+    interface IECSComponentAttrArrayProxyBase extends IECSComponentProxy {
+        __entityManager: fsync.EntityManager;
+        __entity: fsync.Entity;
+        __comp: fsync.IComponent;
+        setComp(comp: fsync.IComponent): any;
+        __compClass: new () => fsync.IComponent;
+        setCompCls(cls: new () => fsync.IComponent): any;
+    }
+    /**
+     * 指代 config 代理
+     */
+    interface IConfigProxyBase {
+        __cfgid: number | string;
+        __cfg: (id: any) => any;
+        setConfig<T>(call: (id: any) => T, id: string | number): any;
+    }
+    /**
+     * 中间数据
+     */
+    class CompDecoInfo {
+        t: any;
+        cls: any;
+        constructor(t: any, cls: any);
+    }
+    interface IConfigBase {
+        /**
+         * 规定所有配表必须有次唯一id字段
+         */
+        id: string | number;
+    }
+    class ConfigDecoInfo extends CompDecoInfo {
+        t: any;
+        cls: any;
+        tables: IConfigBase[];
+        defaultId?: string | number;
+        constructor(t: any, cls: any, tables: IConfigBase[], defaultId?: string | number);
+    }
+    interface ICustomDataAccessor {
+        /**
+         * id to target
+         */
+        toTarget: (id: string | number) => any;
+        /**
+         * target to id
+         */
+        toClonable: (a: any) => string | number;
+    }
+    function ToCompConfig<T extends IConfigBase>(id: string | number): T;
+    /**
+     * 配表装饰器
+     * @param cls
+     * @param clsid
+     */
+    let StandCompConfig: <T>(cls: new () => T, tables: IConfigBase[], defaultId?: string | number) => T;
+    let StandCompConfigSimple: <T>(cls: new () => T, tables: IConfigBase[], defaultId?: string | number) => T;
+    /**
+     * 自定义装饰
+     */
+    class CustomDataDecoInfo extends CompDecoInfo {
+        t: any;
+        cls: any;
+        accessor: ICustomDataAccessor;
+        defaultId?: string | number;
+        constructor(t: any, cls: any, accessor: ICustomDataAccessor, defaultId?: string | number);
+    }
+    /**
+     * 配表装饰器
+     * @param cls
+     * @param clsid
+     */
+    let StandCustomData: <T>(cls: new () => T, accessor: ICustomDataAccessor, defaultId?: string | number) => T;
+    let StandCustomDataSimple: <T>(cls: new () => T, accessor: ICustomDataAccessor, defaultId?: string | number) => T;
+    /**
+     * 自定义装饰
+     */
+    class CustomDataArrayDecoInfo extends CompDecoInfo {
+        t: any;
+        cls: any;
+        accessor: ICustomDataAccessor;
+        constructor(t: any, cls: any, accessor: ICustomDataAccessor);
+    }
+    /**
+     * 配表装饰器
+     * @param cls
+     * @param clsid
+     */
+    let StandCustomDataArray: <T>(cls: new () => T, accessor: ICustomDataAccessor) => T[];
+    let StandCustomDataArraySimple: <T>(cls: new () => T, accessor: ICustomDataAccessor) => T[];
+    /**
+     * 组件装饰器
+     * @param cls
+     */
+    let StandCompProxy: <T extends IComponent>(cls: new () => T) => T & IECSComponentProxy;
+    let StandCompProxySimple: <T extends IComponent>(cls: new () => T) => T & IECSComponentProxy;
+    /**
+     * entityId 装饰器
+     * @param cls
+     */
+    let StandEntityProxy: <T extends EntityProxyBase>(cls: new () => T) => T;
+    let StandEntityProxySimple: <T extends EntityProxyBase>(cls: new () => T) => T;
+    /**
+     * entityId[] 装饰器
+     * @param cls
+     */
+    let StandEntityProxyArray: <T extends EntityProxyBase>(cls: new () => T) => Tuple<T>;
+    let StandEntityProxyArraySimple: <T extends EntityProxyBase>(cls: new () => T) => Tuple<T>;
+    /**
+     * 标记为动态增删的组件, 使用代理创建entity时,不会自动新增该组件
+     * @param params
+     */
+    function DecoDynamicComp(target: object, property: string): void;
+}
+declare namespace fsync.ecsproxy {
+    /**
+     * entityproxy 类装饰器
+     * @param target
+     */
+    function DecoEntityProxy<T extends EntityProxyBase>(target: new () => T): void;
+    function DoDecoEntityProxy<T extends EntityProxyBase>(target: new () => T): void;
+}
+declare namespace fsync.ecsproxy {
+    const DeleteMark: any;
+    class EntityProxyBase {
+        entity: fsync.Entity;
+        entityManager: fsync.EntityManager;
+        protected deleteOutdate(): void;
+        static getComponents<T>(proxyClz: new () => T): (new () => IComponent)[];
+        init(entityManager: fsync.EntityManager, entity: fsync.Entity): this;
+        getComponent<T extends fsync.IComponent>(cls: new () => T): T;
+        getComponentProxy<T extends fsync.IComponent>(cls: new () => T): T & IECSComponentProxy;
+        get entityId(): string;
+        set entityId(entityId: string);
+        get isNull(): bool;
+        isSame(t: EntityProxyBase): bool;
+        removeSelf(): void;
+        Components: (new () => fsync.IComponent)[];
+        dynamicComps: string[];
+    }
+}
+declare namespace fsync.ecsproxy {
+    class EntityProxyHelper {
+        init(): this;
+        clear(): void;
+        /**
+        * entity 代理缓存
+        */
+        entityProxyMap: {
+            [key: string]: EntityProxyBase;
+        };
+        getEntityGUID(t: string, entityManager: fsync.EntityManager, entity: fsync.Entity): string;
+        getEntityProxy<T extends EntityProxyBase>(cls: new () => T, entityManager: fsync.EntityManager, entity: fsync.Entity): T;
+        /**
+         * 组件 代理缓存
+         */
+        compProxyMap: {
+            [key: string]: IECSComponentAttrProxyBase;
+        };
+        getCompGUID(t: string, entityManager: fsync.EntityManager, entity: fsync.Entity): string;
+        getComponentProxy<T extends fsync.IComponent>(cls: new () => T, entityManager: fsync.EntityManager, entity: fsync.Entity): T & IECSComponentProxy;
+        createComponentProxy<T extends fsync.IComponent>(cls: new () => T, entityManager: fsync.EntityManager, entity: fsync.Entity): IECSComponentAttrProxyBase;
+        /**
+         * entityproxy -> entity
+         * @param entityManager
+         * @param proxyClz
+         */
+        createEntityByProxy<T extends EntityProxyBase>(entityManager: EntityManager, proxyClz: new () => T): Entity;
+        /**
+         * entityproxy -> entity
+         * @param entityManager
+         * @param proxy
+         */
+        createEntityProxy<T extends EntityProxyBase>(entityManager: EntityManager, proxyClz: new () => T): T;
+        getEntityProxyComponents<T>(proxyClz: new () => T): (new () => IComponent)[];
+    }
+    const entityProxyHelper: EntityProxyHelper;
+}
+declare namespace fsync.ecsproxy {
+    class EntityProxyQuery<T extends EntityProxyBase> {
+        protected entityManager: EntityManager;
+        protected query: EntityQuery;
+        protected EntityProxyClass: new () => T;
+        init(entityManager: EntityManager, EntityProxyClass: new () => T): this;
+        with(cls: new () => fsync.IComponent): this;
+        withKey(k: keyof T): this;
+        forEach(call: (proxy: T) => void): void;
+        toArray(): T[];
+    }
+    class EntityQueryHelper {
+        createQuery<T extends EntityProxyBase>(entityManager: EntityManager, cls: new () => T): EntityProxyQuery<T>;
+    }
+    const entityQueryHelper: EntityQueryHelper;
+}
+declare namespace fsync.ecsproxy {
+    class EntityProxyArray<T extends EntityProxyBase> extends Array<T> {
+        __key: string;
+        __host: IECSComponentAttrArrayProxyBase;
+        __cls: new () => T;
+        push(...items: T[]): number;
+    }
+}
+declare namespace fsync.ecsproxy {
+    /**
+     * 代理类注册类
+     */
+    class ProxyClasses {
+        compProxies: (new () => IComponent)[];
+        entityProxies: (new () => EntityProxyBase)[];
+        decorated: bool;
+        autoDecorate: bool;
+        init(): this;
+        /**
+         * 为了避免循环依赖导致装饰异常,延迟到全部类注册完之后一起装饰
+         */
+        decorateAll(): void;
+    }
+    /**
+     * 代理类注册类实例
+     */
+    const proxyClasses: ProxyClasses;
+}
+declare namespace fsync.ecsproxy {
+    class ProxySystemBase extends SystemBase {
+        createQuery<T extends EntityProxyBase>(cls: new () => T): EntityProxyQuery<T>;
+    }
+}
+declare namespace fsync.ecsproxy {
+    /**
+     * 列表结构只读的 Array
+     */
+    interface Tuple<T> {
+        /**
+         * Gets or sets the length of the array. This is a number one higher than the highest element defined in an array.
+         */
+        length: number;
+        /**
+         * Returns a string representation of an array.
+         */
+        toString(): string;
+        /**
+         * Returns a string representation of an array. The elements are converted to string using their toLocalString methods.
+         */
+        toLocaleString(): string;
+        /**
+         * Combines two or more arrays.
+         * @param items Additional items to add to the end of array1.
+         */
+        concat(...items: ConcatArray<T>[]): T[];
+        /**
+         * Combines two or more arrays.
+         * @param items Additional items to add to the end of array1.
+         */
+        concat(...items: (T | ConcatArray<T>)[]): T[];
+        /**
+         * Adds all the elements of an array separated by the specified separator string.
+         * @param separator A string used to separate one element of an array from the next in the resulting String. If omitted, the array elements are separated with a comma.
+         */
+        join(separator?: string): string;
+        /**
+         * Returns a section of an array.
+         * @param start The beginning of the specified portion of the array.
+         * @param end The end of the specified portion of the array. This is exclusive of the element at the index 'end'.
+         */
+        slice(start?: number, end?: number): T[];
+        /**
+         * Returns the index of the first occurrence of a value in an array.
+         * @param searchElement The value to locate in the array.
+         * @param fromIndex The array index at which to begin the search. If fromIndex is omitted, the search starts at index 0.
+         */
+        indexOf(searchElement: T, fromIndex?: number): number;
+        /**
+         * Returns the index of the last occurrence of a specified value in an array.
+         * @param searchElement The value to locate in the array.
+         * @param fromIndex The array index at which to begin the search. If fromIndex is omitted, the search starts at the last index in the array.
+         */
+        lastIndexOf(searchElement: T, fromIndex?: number): number;
+        /**
+         * Determines whether all the members of an array satisfy the specified test.
+         * @param predicate A function that accepts up to three arguments. The every method calls
+         * the predicate function for each element in the array until the predicate returns a value
+         * which is coercible to the Boolean value false, or until the end of the array.
+         * @param thisArg An object to which the this keyword can refer in the predicate function.
+         * If thisArg is omitted, undefined is used as the this value.
+         */
+        every<S extends T>(predicate: (value: T, index: number, array: T[]) => value is S, thisArg?: any): this is S[];
+        /**
+         * Determines whether all the members of an array satisfy the specified test.
+         * @param predicate A function that accepts up to three arguments. The every method calls
+         * the predicate function for each element in the array until the predicate returns a value
+         * which is coercible to the Boolean value false, or until the end of the array.
+         * @param thisArg An object to which the this keyword can refer in the predicate function.
+         * If thisArg is omitted, undefined is used as the this value.
+         */
+        every(predicate: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean;
+        /**
+         * Determines whether the specified callback function returns true for any element of an array.
+         * @param predicate A function that accepts up to three arguments. The some method calls
+         * the predicate function for each element in the array until the predicate returns a value
+         * which is coercible to the Boolean value true, or until the end of the array.
+         * @param thisArg An object to which the this keyword can refer in the predicate function.
+         * If thisArg is omitted, undefined is used as the this value.
+         */
+        some(predicate: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean;
+        /**
+         * Performs the specified action for each element in an array.
+         * @param callbackfn  A function that accepts up to three arguments. forEach calls the callbackfn function one time for each element in the array.
+         * @param thisArg  An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+         */
+        forEach(callbackfn: (value: T, index: number, array: T[]) => void, thisArg?: any): void;
+        /**
+         * Calls a defined callback function on each element of an array, and returns an array that contains the results.
+         * @param callbackfn A function that accepts up to three arguments. The map method calls the callbackfn function one time for each element in the array.
+         * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+         */
+        map<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[];
+        /**
+         * Returns the value of the first element in the array where predicate is true, and undefined
+         * otherwise.
+         * @param predicate find calls predicate once for each element of the array, in ascending
+         * order, until it finds one where predicate returns true. If such an element is found, find
+         * immediately returns that element value. Otherwise, find returns undefined.
+         * @param thisArg If provided, it will be used as the this value for each invocation of
+         * predicate. If it is not provided, undefined is used instead.
+         */
+        find<S extends T>(predicate: (this: void, value: T, index: number, obj: T[]) => value is S, thisArg?: any): S | undefined;
+        find(predicate: (value: T, index: number, obj: T[]) => unknown, thisArg?: any): T | undefined;
+        /**
+         * Returns the elements of an array that meet the condition specified in a callback function.
+         * @param predicate A function that accepts up to three arguments. The filter method calls the predicate function one time for each element in the array.
+         * @param thisArg An object to which the this keyword can refer in the predicate function. If thisArg is omitted, undefined is used as the this value.
+         */
+        filter<S extends T>(predicate: (value: T, index: number, array: T[]) => value is S, thisArg?: any): S[];
+        /**
+         * Returns the elements of an array that meet the condition specified in a callback function.
+         * @param predicate A function that accepts up to three arguments. The filter method calls the predicate function one time for each element in the array.
+         * @param thisArg An object to which the this keyword can refer in the predicate function. If thisArg is omitted, undefined is used as the this value.
+         */
+        filter(predicate: (value: T, index: number, array: T[]) => unknown, thisArg?: any): T[];
+        /**
+         * Calls the specified callback function for all the elements in an array. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+         * @param callbackfn A function that accepts up to four arguments. The reduce method calls the callbackfn function one time for each element in the array.
+         * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+         */
+        reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T): T;
+        reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T): T;
+        /**
+         * Calls the specified callback function for all the elements in an array. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+         * @param callbackfn A function that accepts up to four arguments. The reduce method calls the callbackfn function one time for each element in the array.
+         * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+         */
+        reduce<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
+        /**
+         * Calls the specified callback function for all the elements in an array, in descending order. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+         * @param callbackfn A function that accepts up to four arguments. The reduceRight method calls the callbackfn function one time for each element in the array.
+         * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+         */
+        reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T): T;
+        reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T): T;
+        /**
+         * Calls the specified callback function for all the elements in an array, in descending order. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+         * @param callbackfn A function that accepts up to four arguments. The reduceRight method calls the callbackfn function one time for each element in the array.
+         * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+         */
+        reduceRight<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
+        readonly [n: number]: T;
+    }
+}
+declare namespace fsync.ecsproxy {
+    class AnyEntityProxy extends EntityProxyBase {
+    }
+}
+declare namespace fsync.ecsproxy {
+    type TConfigId = number;
+    type TEntityID = fsync.EntityID;
 }
 declare namespace fsync {
     class Translation implements IComponent {
@@ -1151,6 +2003,10 @@ declare namespace fsync {
          * 清理过期的指令
          */
         protected cleanOutdateCmds(): void;
+        /**
+         * 清理过期的指令
+         */
+        cleanOutdateLocalCmdsForce(): void;
         mergeFrom(cmdBuffer: SinglePortCmdBuffer): void;
         syncLocalCmd(): void;
     }
@@ -1172,6 +2028,7 @@ declare namespace fsync {
         popFrameCmds(frameCount: number): IGameInputCmd[];
         mergeFrom(cmdBuffer: InputCmdBuffer): void;
         syncLocalCmd(): void;
+        clearOutdateCmdsForce(): void;
     }
 }
 declare namespace fsync {
@@ -1270,7 +2127,7 @@ declare namespace kitten.gamepad {
          * 计算触摸矢量数据
          */
         calcTouchVector(): void;
-        init(id: string): this;
+        init(id: string, sharedState: StickSharedState): this;
         /**
          * 动态设置当前摇杆中心点
          * @param pos
@@ -1322,9 +2179,7 @@ declare namespace kitten.gamepad {
         protected multiTouchMap: {
             [id: string]: string;
         };
-        protected static multiTouchMap: {
-            [id: string]: string;
-        };
+        protected sharedState: StickSharedState;
         /**
          * 检测虚拟手柄输入
          * @param data
@@ -1352,8 +2207,11 @@ declare namespace kitten.gamepad {
      * 自动重定位的摇杆
      */
     class GameStick extends CircleStick {
+        /**
+         * 玩家放开触摸摇杆时,摇杆中心点和当前触摸点复位
+         */
         protected needResetAfterLoose: boolean;
-        init(id: string): this;
+        init(id: string, sharedState: StickSharedState): this;
         updateStatus(): void;
     }
 }
@@ -1424,6 +2282,10 @@ declare namespace kitten.gamepad {
          * 摇杆列表
          */
         virutalCtrls: CircleStick[];
+        /**
+         * 摇杆共享状态
+         */
+        sharedState: StickSharedState;
         init(): this;
         /**
          * 触控调试视图列表
@@ -1487,6 +2349,16 @@ declare namespace kitten.gamepad {
         ctrlPos: Vector3;
     }
     export { };
+}
+declare namespace kitten.gamepad {
+    /**
+     * 摇杆共享状态
+     */
+    class StickSharedState {
+        multiTouchMap: {
+            [id: string]: string;
+        };
+    }
 }
 declare namespace kitten.guesture {
     type TouchPoint = fsync.Vector3;
@@ -1785,7 +2657,7 @@ declare namespace kitten.rpg {
          */
         protected translate(gamepad: kitten.gamepad.NormalGamepad): void;
         clearCurGameCmd(): void;
-        protected cmdCopy: {};
+        protected cmdCopy: any;
         getCurGameCmd(): fsync.IGameInputCmd;
     }
 }
@@ -3387,335 +4259,6 @@ declare namespace graph {
 declare namespace fsync {
     class TransformSyncSystem extends SystemBase {
         viewBinder: ViewBindManager;
-        update(): void;
-    }
-}
-declare namespace fsync {
-}
-declare namespace fsync {
-    class BulletView implements IView {
-        circle: graph.ISprite;
-        init(): this;
-        setScale(value: Vector3): void;
-        setPos(value: Vector3): void;
-        destroy(): void;
-        setRotation(quat: Vector4): void;
-    }
-    class BulletPrefab extends PrefabBase {
-        createEntity(depsEnv: ViewPrefabEnv): Entity;
-        getPrefabMeta(): PrefabMeta;
-    }
-}
-declare namespace fsync {
-    class HeroView implements IView {
-        circle: graph.ISprite;
-        init(): this;
-        setScale(value: Vector3): void;
-        setPos(value: Vector3): void;
-        destroy(): void;
-        setRotation(quat: Vector4): void;
-    }
-    class HeroPrefab extends PrefabBase {
-        createEntity(depsEnv: ViewPrefabEnv): Entity;
-        protected attachRoleComponents(entityManager: EntityManager, entity: Entity): void;
-        getPrefabMeta(): PrefabMeta;
-    }
-}
-declare namespace fsync {
-    class EnemyView extends HeroView {
-        init(): this;
-    }
-    class EnemyPrefab extends HeroPrefab {
-        createEntity(depsEnv: ViewPrefabEnv): Entity;
-        getPrefabMeta(): PrefabMeta;
-    }
-}
-declare namespace fsync {
-    class FightScenePrefab extends ScenePrefab {
-        create(depsEnv: ViewPrefabEnv): Entity;
-        createEntity(depsEnv: ViewPrefabEnv): Entity;
-    }
-}
-declare namespace fsync {
-    class BulletMark implements IComponent {
-    }
-}
-declare namespace fsync {
-    class BulletSettings implements IComponent {
-        speed: number;
-        hurt: number;
-    }
-}
-declare namespace fsync {
-    class BulletState implements IComponent {
-        moveDir: Vector3;
-        team: number;
-    }
-}
-declare namespace fsync {
-    class EnemyMark implements IComponent {
-    }
-}
-declare namespace fsync {
-    class HeroMark implements IComponent {
-    }
-}
-declare namespace fsync {
-    class RoleInfo implements IComponent {
-        roleId: TRoleId;
-        speed: number;
-    }
-}
-declare namespace fsync {
-    class RoleState {
-        isDead: bool;
-        hp: number;
-        isShooting: boolean;
-        shootDir: Vector3;
-        team: number;
-        shootLastTime: number;
-        shootInterval: number;
-    }
-}
-declare namespace fsync {
-    class RoleData {
-        userId: TUserId;
-        roleId: TRoleId;
-        roomId?: TRoomId;
-        level: number;
-        battleCount: number;
-        score: number;
-        winRate: number;
-    }
-}
-declare namespace fsync {
-    class GameConfig {
-        static readonly inst: GameConfig;
-        init(): this;
-        fps: number;
-        get frameDuration(): number;
-        get syncSignalDuration(): number;
-        get inputDeviceReadInterval(): number;
-        roleCount: number;
-    }
-}
-declare namespace fsync {
-    class GameState {
-        isPlaying: boolean;
-    }
-    class GameFramework {
-        static readonly inst: GameFramework;
-        init(): this;
-        intervals: Intervals;
-        netClient: RoomClient;
-        roleData: RoleData;
-        gameInfo: {
-            frameDuration: number;
-            gameMode: number;
-            matchTimeout: number;
-            roleCount: number;
-        };
-        enermyDatas: RoleData[];
-        allRoleDatas: RoleData[];
-        gameState: GameState;
-        reset(): void;
-        createRoomClient(proto: ProtoTool, addrRoomMatcher: string): Promise<void>;
-        get clientSize(): Vector3;
-        get clientRange(): Rect;
-        startGame(addrRoomServer: string, call: (result: roomserver.TRespStartGameResult) => void): void;
-        exitRoom(): void;
-    }
-}
-declare namespace fsync {
-    class GameResult {
-        world: ECSWorld;
-        roleData: RoleData;
-        get entityManager(): EntityManager;
-        init(world: ECSWorld, roleData: RoleData): this;
-        update(): void;
-    }
-}
-declare namespace fsync {
-    class SharedGameStatus {
-    }
-}
-declare namespace fsync {
-    class ShootGame {
-        roleCtrl: RoleController;
-        netCmdTranslator: NetworkCmdTranslator;
-        inputCmdBuffer: InputCmdBuffer;
-        localInputPost: LocalInputPost;
-        world: ECSWorld;
-        init(world: ECSWorld): this;
-        initGameDeviceInput(): void;
-        protected netClient: RoomClient;
-        bindNetClient(netClient: RoomClient): void;
-        enable: boolean;
-        update(): void;
-    }
-}
-declare namespace fsync {
-    class RoleController {
-        world: ECSWorld;
-        entityManager: EntityManager;
-        init(): this;
-        execute(cmd: IGameInputCmd): void;
-    }
-}
-declare namespace fsync {
-    class BulletSystem extends SystemBase {
-        update(): void;
-    }
-}
-declare namespace fsync {
-    class GameSystem extends SystemBase {
-        game: ShootGame;
-        winResult: GameResult;
-        update(): void;
-    }
-}
-declare namespace fsync {
-    interface ICmdTranslator {
-        init(): ICmdTranslator;
-        setRoleData(roleData: RoleData): any;
-        setGameInput(gameCtrl: GameInputController): any;
-        clearCurGameCmd(): void;
-        getCurGameCmd(): IGameInputCmd;
-    }
-    /**
-     * 将玩家操作转译成统一指令
-     */
-    class CmdTranslator implements ICmdTranslator {
-        init(): this;
-        protected curGameCmd: RoleCmd;
-        protected roleData: RoleData;
-        setRoleData(roleData: RoleData): void;
-        protected curCmdIndex: number;
-        protected initGameCtrl(): void;
-        protected gameCtrl: GameInputController;
-        setGameInput(gameCtrl: GameInputController): void;
-        /**
-         * 简单的转义出：
-         * - 左按下->平移{方向，正在移动}
-         * - 右按下->射击方向{方向，正在射击}
-         */
-        protected translate(gameCtrl: GameInputController): void;
-        clearCurGameCmd(): void;
-        protected cmdCopy: {};
-        getCurGameCmd(): IGameInputCmd;
-    }
-}
-declare namespace fsync {
-    class ControllerState {
-        dir: Vector3;
-        strength: number;
-        pressed: boolean;
-    }
-    export type GameInputHandler = (input: GameInputController) => void;
-    export class GameInputController {
-        static readonly inst: GameInputController;
-        protected enable: boolean;
-        leftCtrlPos: Vector3;
-        rightCtrlPos: Vector3;
-        leftCtrl: ControllerState;
-        rightCtrl: ControllerState;
-        init(): this;
-        protected circleRight: graph.ISprite;
-        protected circleLeft: graph.ISprite;
-        protected circleScale: number;
-        setupView(): void;
-        getRightCtrlRange(): Rect;
-        getLeftCtrlRange(): Rect;
-        startGameHandler: Function;
-        handlerInput(data: UserInputData): void;
-        protected multiTouchMap: {
-            [id: string]: string;
-        };
-        protected gameInputHandler: GameInputHandler[];
-        addGameInputHandler(call: GameInputHandler): void;
-    }
-    export { };
-}
-declare namespace fsync {
-    class NetDelaySimulator {
-        delayIndex: number;
-        getDelayTime(): number;
-    }
-}
-declare namespace fsync {
-    class PlayerInputSystem extends SystemBase {
-        netClient: RoomClient;
-        localInputPost: LocalInputPost;
-        roleData: RoleData;
-        cmdTrans: ICmdTranslator;
-        delaySimulator: NetDelaySimulator;
-        update(): void;
-    }
-}
-declare namespace fsync {
-    type RoleCmd = IGameInputCmd & {
-        move?: {
-            dir: number[];
-            times: number;
-        };
-        shoot?: {
-            times: number;
-            dir: number[];
-            strength: number;
-        };
-    };
-}
-declare namespace fsync {
-    /**
-     * 将玩家操作转译成统一指令
-     */
-    class RobotCmdTranslator implements ICmdTranslator {
-        random: FrameSyncRandom;
-        init(): this;
-        protected roleData: RoleData;
-        setRoleData(roleData: RoleData): void;
-        setGameInput(gameCtrl: GameInputController): void;
-        clearCurGameCmd(): void;
-        protected curCmdIndex: number;
-        getCurGameCmd(): IGameInputCmd;
-    }
-}
-declare namespace fsync {
-    const RobotConfig: {
-        randSeed: number;
-    };
-}
-declare namespace fsync {
-    class FightWorld {
-        mainProcess: WorldMainProcess;
-        viewBinder: ViewBindManager;
-        netClient: RoomClient;
-        localInputPost: LocalInputPost;
-        syncViewSystem: SystemBase;
-        init(): this;
-        clear(): void;
-        protected worldReady: bool;
-        createWorld(roleData: RoleData, options: {
-            autoTest: bool;
-            withUI: bool;
-        }): Promise<void>;
-        addCustomSystem(world: ECSWorld, updater: UpdaterGroupManager): void;
-        protected genUtils(): FrameSyncUtils;
-        update(): void;
-    }
-}
-declare namespace fsync {
-    type StartGameConfig = {
-        roleId: number;
-        roleCount: number;
-        autoTest: bool;
-        withUI: bool;
-    };
-    class GameManager {
-        init(): this;
-        protected curFightWorld: FightWorld;
-        startGame(config: StartGameConfig): Promise<void>;
-        clearGame(): void;
         update(): void;
     }
 }

@@ -24,7 +24,7 @@ namespace gcc.uit {
             this.leftStick.syncViewData(this.gamepad.leftStick)
             this.rightStick.syncViewData(this.gamepad.rightStick)
             for (let stickView of this.skillSticks) {
-                let stick = new kitten.gamepad.GameStick().init(`skill_${stickView.stickRange.parent.getSiblingIndex()}`)
+                let stick = new kitten.gamepad.GameStick().init(`skill_${stickView.stickRange.parent.getSiblingIndex()}`, this.gamepad.sharedState)
                 this.gamepad.virutalCtrls.push(stick)
                 stickView.syncViewData(stick)
             }
