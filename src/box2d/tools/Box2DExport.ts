@@ -30,18 +30,32 @@ namespace gcc.box2d.tools {
             }
         }
 
-        exportPrefabs(dir: string, out: string) {
+        exportPrefabs(dir: string, outDir: string) {
             cc.loader.loadResDir(dir, cc.Prefab, (err, reses: cc.Prefab[]) => {
                 for (let res of reses) {
-                    this.handleBox2dPrefab(res, out)
+                    this.handleBox2dPrefab(res, outDir)
                 }
             })
         }
 
-        handleBox2dPrefab(prefab: cc.Prefab, out: string) {
+        handleBox2dPrefab(prefab: cc.Prefab, outDir: string) {
+            let b2Node = this.convBox2dPrefab(prefab)
+
+            let sentences = b2data.exportB2NodeToTypescript(b2Node)
+            let ss = sentences.join("\n")
+            this.writeFile(`${outDir}/${prefab.name}.ts`, ss)
+
+            this.writeFile(`${outDir}/${prefab.name}.json`, JSON.stringify(b2Node))
+        }
+
+        convBox2dPrefab(prefab: cc.Prefab): b2data.Box2DNode {
             let node = cc.instantiate(prefab)
+            return this.convBox2dNode(prefab.name, node)
+        }
+
+        convBox2dNode(name: string, node: cc.Node): b2data.Box2DNode {
             let b2Node = new b2data.Box2DNode()
-            b2Node.name = prefab.name
+            b2Node.name = name
             for (let child of node.children) {
                 if (!!child.getComponent(cc.RigidBody)) {
                     let b2Body = this.handleBox2dBody(child)
@@ -49,14 +63,18 @@ namespace gcc.box2d.tools {
                 }
             }
 
-            let sentences = b2data.exportB2NodeToTypescript(b2Node)
-            let ss = sentences.join("\n")
-            this.writeFile(`${out}/${prefab.name}.ts`, ss)
+            for (let comp of node.getComponentsInChildren(CCB2DComp)) {
+                let b2Comp = this.handleSkillComp(comp)
+                b2Node.extras.push(b2Comp)
+            }
+
+            return b2Node
         }
 
         handleBox2dBody(node: cc.Node) {
             let b2Body = new b2data.Box2DBody()
             b2Body.name = node.name
+            b2Body.oid = node.uuid
             for (let comp of (node['_components'] as cc.Component[])) {
                 let b2Comp = this.handleBox2dComponent(comp) as b2data.Component
                 if (b2Comp) {
@@ -78,10 +96,17 @@ namespace gcc.box2d.tools {
             return transform
         }
 
+        handleSkillComp(comp: CCB2DComp) {
+            if (comp instanceof CCB2DComp) {
+                return comp.toJson()
+            }
+            return null
+        }
+
         handleBox2dComponent(comp: cc.Component) {
             let name = comp.constructor.name
             let handleKey = name.substr(3)
-            let call = this[`handle${handleKey}`] as Function
+            let call = this[`handle${handleKey}`] as (comp: cc.Component) => b2data.Component
             if (call) {
                 let b2Comp = call.call(this, comp)
                 return b2Comp

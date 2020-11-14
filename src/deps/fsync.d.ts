@@ -338,11 +338,13 @@ declare namespace fsync.box2d.b2data {
     }
     class Box2DBody {
         name: string;
+        oid: string
         components: Component[];
     }
     class Box2DNode {
         name: string;
         children: Box2DBody[];
+        extras: Object[];
     }
 }
 declare namespace fsync.box2d.b2data {
