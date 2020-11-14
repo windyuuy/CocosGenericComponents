@@ -194,6 +194,7 @@ declare namespace fsync {
         protected static _fromNumArray4(ns: number[]): Vector4;
         static distanceSQ(vec1: IVector, vec2: IVector): number;
         static distance(vec1: IVector, vec2: IVector): number;
+        static equal(vec1: IVector, vec2: IVector): bool;
         static subDown<T extends IVector>(vec1: T, vec2: T): T;
         static addUp<T extends IVector>(vec1: T, vec2: T): T;
         static multUp<T extends IVector>(vec1: T, vec2: T): T;
@@ -252,6 +253,7 @@ declare namespace fsync {
         set height(n: number);
         static fromSize2Like(size2: ISize2Spec): Size2;
         copySize2ike({ width, height }: ISize2Spec): this;
+        static fromNumArray(ns: number[]): Size2;
     }
     interface ISize3Spec {
         width?: number;
@@ -268,6 +270,7 @@ declare namespace fsync {
         set depth(n: number);
         static fromSize3Like(size3: ISize3Spec): Size3;
         copySize3ike({ width, height, depth }: ISize3Spec): this;
+        static fromNumArray(ns: number[]): Size3;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -275,15 +278,23 @@ declare namespace fsync.box2d.b2data {
     export import Vec3 = fsync.Vector3;
     export import Vec4 = fsync.Vector4;
     export import Size = fsync.Size2;
-    class Component {
+    interface IBox2DModel {
+        oid: string;
+    }
+    class Component implements IBox2DModel {
+        parent: Box2DParent;
+        loadFromJson(child: Component): void;
         oid: string;
         ctype: string;
+        getWorldRotationZ(): number;
+        getWorldFlipY(): number;
+        getWorldPosition2(): Vec2;
     }
 }
 declare namespace fsync.box2d.b2data {
     /** !#en Defines a Box Collider .
 !#zh 用来定义包围盒碰撞体 */
-    class Box {
+    interface Box {
         /** !#en Position offset
         !#zh 位置偏移量 */
         offset: Vec2;
@@ -293,15 +304,223 @@ declare namespace fsync.box2d.b2data {
     }
 }
 declare namespace fsync.box2d.b2data {
+    interface IBox2DUserData {
+        /**
+         * 自身唯一id
+         */
+        oid: string;
+        /**
+         * 对应模型节点的 oid
+         */
+        mid: string;
+    }
+    interface IBox2DFixtureData extends IBox2DUserData {
+        /**
+         * 产生的碰撞信息
+         */
+        contacts: {
+            /**
+         * 碰撞状态
+         * - begin 已发生碰撞时
+         * - on 进行中
+         * - end 碰撞结束时
+         */
+            state: "begin" | "on" | "end";
+            contact: b2.Contact;
+        }[];
+    }
+    interface IBox2DBodyData extends IBox2DUserData {
+    }
+    interface IBox2DJointData extends IBox2DUserData {
+    }
+}
+declare namespace fsync.box2d {
+    class Box2DHelper {
+        getBodyAABB(b: b2.Body, vs: b2.AABB): b2.AABB;
+    }
+    const box2DHelper: Box2DHelper;
+}
+declare namespace fsync.box2d.b2data {
+    interface Box2DParent {
+        transform: Transform;
+        parent: Box2DParent;
+    }
+    class Box2DBody implements Box2DParent {
+        updateParent(): void;
+        name: string;
+        oid: string;
+        components: Component[];
+        transform: Transform;
+        parent: Box2DParent;
+        findRigidBody(): RigidBody;
+        loadFromJson(json: Box2DBody): void;
+    }
+    class Box2DNode implements IBox2DModel {
+        oid: string;
+        name: string;
+        children: Box2DBody[];
+        transform: Transform;
+        parent: Box2DParent;
+        /**
+         * 所挂技能附件的信息
+         */
+        skillExtras: ISkillExtra[];
+        updateParent(): void;
+        loadFromJson(obj: Box2DNode): void;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    class Transform extends Component {
+        position: Vec3;
+        rotation: number;
+        flip: 1 | -1;
+        loadFromJson(json: Transform): void;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    class Box2DUnion implements IBox2DModel {
+        oid: string;
+        mid: string;
+        bodies: b2.Body[];
+        joints: b2.Joint[];
+        fixtures: b2.Fixture[];
+        headBody: b2.Body;
+        skillExtras: ISkillExtra[];
+        updateUserData(uidTool: UniqueIDTool): void;
+        calcAABB(): {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+    }
+    class Box2DUnionData implements IBox2DModel {
+        oid: string;
+        children: Box2DNode[];
+        /**
+         * 关联信息
+         */
+        fixedContacts: FixedContact[];
+        /**
+         * 锚点主体
+         */
+        bodyName: string;
+        loadFromJson(json: Box2DUnionData): void;
+        createUnion(world: b2.World): Box2DUnion;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    class ContactListnener extends b2.ContactListener {
+        /**
+        * Called when two fixtures begin to touch.
+        * 当两个fixture碰撞时，触发该函数
+        * @param contact Contact point.
+        **/
+        BeginContact(contact: b2.Contact): void;
+        /**
+        * Called when two fixtures cease to touch.
+        * 当两个fixture停止碰撞时，触发该函数
+        * @param contact Contact point.
+        **/
+        EndContact(contact: b2.Contact): void;
+        /**
+        * This lets you inspect a contact after the solver is finished. This is useful for inspecting impulses. Note: the contact manifold does not include time of impact impulses, which can be arbitrarily large if the sub-step is small. Hence the impulse is provided explicitly in a separate data structure. Note: this is only called for contacts that are touching, solid, and awake.
+        * 在碰撞检测之后，但在碰撞求解（物理模拟）之前，此函数的事件会被触发。这样是为了给开发者一个机会，根据当前情况来决定是否使这个接触失效。在回调的函数中使用一个设置函数就可以实现单侧碰撞的功能。每次碰撞处理时，接触会重新生效，开发者不得不在每一个时间步中都设置同一个接触无效。由于连续碰撞检测，PreSolve事件在单个时间步中有可能发生多次
+        * @param contact Contact point.
+        * @param impulse Contact impulse.
+        **/
+        PreSolve(contact: b2.Contact, oldManifold: b2.Manifold): void;
+        /**
+        * This is called after a contact is updated. This allows you to inspect a contact before it goes to the solver. If you are careful, you can modify the contact manifold (e.g. disable contact). A copy of the old manifold is provided so that you can detect changes. Note: this is called only for awake bodies. Note: this is called even when the number of contact points is zero. Note: this is not called for sensors. Note: if you set the number of contact points to zero, you will not get an EndContact callback. However, you may get a BeginContact callback the next step.
+        * 当引擎完成了碰撞求解，也就是物理模拟过程过后，开发者可以得到碰撞冲量（collision impulse）的结果时，函数postSolve就会被调用了。这将是提供给开发者附加碰撞结果的机会。
+        * 在一个接触回调函数PostSolve中去改变物理世界的模拟数据，是一件神奇的工作。例如，在游戏中可能会以碰撞的方式来消灭敌人。此时开发者就可以在此函数中施加伤害，并试图摧毁关联的角色和它的刚体。然而，引擎并不允许开发者在回调函数中改变物理世界的物体，这样做是为了避免摧毁引擎正在运算的对象，造成访问错误。
+        * @param contact Contact point.
+        * @param oldManifold Old manifold.
+        **/
+        PostSolve(contact: b2.Contact, impulse: b2.ContactImpulse): void;
+        BeginContactFixtureParticle(system: b2.ParticleSystem, contact: b2.ParticleBodyContact): void;
+        EndContactFixtureParticle(system: b2.ParticleSystem, contact: b2.ParticleBodyContact): void;
+        BeginContactParticleParticle(system: b2.ParticleSystem, contact: b2.ParticleContact): void;
+        EndContactParticleParticle(system: b2.ParticleSystem, contact: b2.ParticleContact): void;
+    }
+    class Box2DWorld {
+        gravity: Vec2;
+        loadFromJson(json: Box2DWorld): void;
+        createWorld(): b2.World;
+    }
+}
+/****************************************************************************
+ Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+
+ https://www.cocos.com/
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated engine source code (the "Software"), a limited,
+ worldwide, royalty-free, non-assignable, revocable and non-exclusive license
+ to use Cocos Creator solely to develop games on your target platforms. You shall
+ not use Cocos Creator software for developing other software or tools that's
+ used for developing games. You are not granted to publish, distribute,
+ sublicense, and/or sell copies of Cocos Creator.
+
+ The software or tools in this License Agreement are licensed, not sold.
+ Xiamen Yaji Software Co., Ltd. reserves all rights not expressly granted to you.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ ****************************************************************************/
+declare namespace fsync.box2d.b2data.tools {
+    function At(i: any, vertices: any): any;
+    function Copy(i: any, j: any, vertices: any): any[];
+    function ConvexPartition(vertices: any): any[];
+    function CanSee(i: any, j: any, vertices: any): boolean;
+    function Reflex(i: any, vertices: any): boolean;
+    function Right(a: any, b: any, c?: any): boolean;
+    function Left(a: any, b: any, c: any): boolean;
+    function LeftOn(a: any, b: any, c: any): boolean;
+    function RightOn(a: any, b: any, c: any): boolean;
+    function SquareDist(a: any, b: any): number;
+    function ForceCounterClockWise(vertices: any): void;
+    function IsCounterClockWise(vertices: any): boolean;
+    function GetSignedArea(vertices: any): number;
+    function LineIntersect(p1: any, p2: any, q1: any, q2: any): {
+        x: number;
+        y: number;
+    };
+    function LineIntersect2(a0: any, a1: any, b0: any, b1: any, intersectionPoint: any): boolean;
+    function FloatEquals(value1: any, value2: any): boolean;
+    function Area(a: any, b: any, c: any): number;
+}
+declare namespace fsync.box2d.b2data {
     /** !#en Defines a Circle Collider .
     !#zh 用来定义圆形碰撞体 */
-    class Circle {
+    interface Circle {
         /** !#en Position offset
         !#zh 位置偏移量 */
         offset: Vec2;
         /** !#en Circle radius
         !#zh 圆形半径 */
         radius: number;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    interface FixedContact {
+        connectZoneId: string;
+        groupId: string;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    interface ISkillExtra {
+        oid: string;
+        skillType: string;
+    }
+    class SkillExtra implements ISkillExtra {
+        oid: string;
+        skillType: string;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -330,21 +549,9 @@ declare namespace fsync.box2d.b2data {
         !#zh
         链接到关节上的两个刚体是否应该相互碰撞？ */
         collideConnected: boolean;
-    }
-}
-declare namespace fsync.box2d.b2data {
-    class Transform extends Component {
-        position: Vec3;
-    }
-    class Box2DBody {
-        name: string;
-        oid: string
-        components: Component[];
-    }
-    class Box2DNode {
-        name: string;
-        children: Box2DBody[];
-        extras: Object[];
+        loadFromJson(json: Joint): void;
+        createJointDef(): b2.JointDef;
+        createJoint(world: b2.World, jointDef: b2.JointDef): b2.MotorJoint;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -355,16 +562,19 @@ declare namespace fsync.box2d.b2data {
     function exportB2NodeToTypescript(b2Node: Box2DNode): string[];
 }
 declare namespace fsync.box2d.b2data {
+    const ANGLE_TO_PHYSICS_ANGLE: number;
+    const PHYSICS_ANGLE_TO_ANGLE: number;
     /** !#en Collider component base class.
         !#zh 碰撞组件基类 */
     class Collider extends Component {
         /** !#en Tag. If a node has several collider components, you can judge which type of collider is collided according to the tag.
         !#zh 标签。当一个节点上有多个碰撞组件时，在发生碰撞后，可以使用此标签来判断是节点上的哪个碰撞组件被碰撞了。 */
         tag: number;
+        loadFromJson(json: Collider): void;
     }
     /** !#en Defines a Polygon Collider .
         !#zh 用来定义多边形碰撞体 */
-    class Polygon {
+    interface Polygon {
         /** !#en Position offset
         !#zh 位置偏移量 */
         offset: Vec2;
@@ -399,6 +609,11 @@ declare namespace fsync.box2d.b2data {
         !#zh
         碰撞体会在初始化时查找节点上是否存在刚体，如果查找成功则赋值到这个属性上。 */
         body: RigidBody;
+        loadFromJson(json: PhysicsCollider): void;
+        createShape(): b2.Shape;
+        createShapes(): b2.Shape[];
+        createFixtureDef(): b2.FixtureDef;
+        createFixture(zoneBody: b2.Body, fixtureDef: b2.FixtureDef): b2.Fixture;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -410,6 +625,8 @@ declare namespace fsync.box2d.b2data {
         /** !#en Box size
         !#zh 包围盒大小 */
         size: Size;
+        loadFromJson(json: PhysicsBoxCollider): void;
+        createShape(): b2.PolygonShape;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -421,6 +638,8 @@ declare namespace fsync.box2d.b2data {
         /** !#en Circle radius
         !#zh 圆形半径 */
         radius: number;
+        loadFromJson(json: PhysicsCircleCollider): void;
+        createShape(): b2.CircleShape;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -432,6 +651,8 @@ declare namespace fsync.box2d.b2data {
         /** !#en Polygon points
         !#zh 多边形顶点数组 */
         points: Vec2[];
+        loadFromJson(json: PhysicsPolygonCollider): void;
+        createShapes(): b2.PolygonShape[];
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -484,6 +705,8 @@ declare namespace fsync.box2d.b2data {
         !#zh
         期望的马达速度。 */
         motorSpeed: number;
+        loadFromJson(json: PrismaticJoint): void;
+        createJointDef(): b2.PrismaticJointDef;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -536,6 +759,8 @@ declare namespace fsync.box2d.b2data {
         !#zh
         是否开启关节马达？ */
         enableMotor: boolean;
+        loadFromJson(json: RevoluteJoint): void;
+        createJointDef(): b2.RevoluteJointDef;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -641,6 +866,9 @@ declare namespace fsync.box2d.b2data {
         在非激活状态下的夹具不会参与到碰撞，射线，或者查找中
         链接到非激活状态下刚体的关节也是非激活的。 */
         active: boolean;
+        loadFromJson(json: RigidBody): void;
+        createBodyDef(): b2.BodyDef;
+        createBody(world: b2.World, zoneBodyDef: b2.BodyDef): b2.Body;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -684,6 +912,8 @@ declare namespace fsync.box2d.b2data {
         !#zh
         阻尼，表示关节变形后，恢复到初始状态受到的阻力。 */
         dampingRatio: number;
+        loadFromJson(json: WheelJoint): void;
+        createJointDef(): b2.WheelJointDef;
     }
 }
 declare namespace lang.helper {
@@ -735,7 +965,7 @@ declare namespace fsync {
      * 自定义类名反射
      * @param name
      */
-    function cname(name: string): <T>(cls: new () => T) => new () => T;
+    function cname(name: string): <T>(cls: new () => T) => any;
     /**
      * 自动录入唯一类名
      */
@@ -1327,7 +1557,7 @@ declare namespace fsync.ecsproxy {
         /**
          * id to target
          */
-        toTarget: (id: string | number) => any;
+        toTarget: (id: string | number, comp: IComponent, key: string) => any;
         /**
          * target to id
          */

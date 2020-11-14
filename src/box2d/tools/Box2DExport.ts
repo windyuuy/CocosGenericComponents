@@ -55,6 +55,7 @@ namespace gcc.box2d.tools {
 
         convBox2dNode(name: string, node: cc.Node): b2data.Box2DNode {
             let b2Node = new b2data.Box2DNode()
+            b2Node.oid = node.uuid
             b2Node.name = name
             for (let child of node.children) {
                 if (!!child.getComponent(cc.RigidBody)) {
@@ -65,7 +66,17 @@ namespace gcc.box2d.tools {
 
             for (let comp of node.getComponentsInChildren(CCB2DComp)) {
                 let b2Comp = this.handleSkillComp(comp)
-                b2Node.extras.push(b2Comp)
+                b2Node.skillExtras.push(b2Comp)
+            }
+
+            {
+                let transform = new b2data.Transform()
+                transform.oid = "transform_" + node.uuid
+                transform.position = convCCVec3(node.position)
+                transform.rotation = -node.angle
+                transform.ctype = "transform"
+
+                b2Node.transform = transform
             }
 
             return b2Node
@@ -87,18 +98,37 @@ namespace gcc.box2d.tools {
                 let b2Comp = this.handleTransform(node)
                 b2Body.components.push(b2Comp)
             }
+
+            {
+                let transform = new b2data.Transform()
+                transform.oid = "transform_" + node.uuid
+                transform.position = convCCVec3(node.position)
+                transform.rotation = -node.angle
+                transform.ctype = "transform"
+
+                b2Body.transform = transform
+            }
+
             return b2Body
         }
 
         handleTransform(node: cc.Node) {
             let transform = new b2data.Transform()
+            transform.oid = "transform_" + node.uuid
             transform.position = convCCVec3(node.position)
+            transform.rotation = -node.angle
+            transform.ctype = "transform"
             return transform
         }
 
         handleSkillComp(comp: CCB2DComp) {
             if (comp instanceof CCB2DComp) {
-                return comp.toJson()
+                let data = comp.toJson()
+                let result = new b2data.SkillExtra()
+                for (let key of Object.getOwnPropertyNames(data)) {
+                    result[key] = data[key]
+                }
+                return result as b2data.ISkillExtra
             }
             return null
         }

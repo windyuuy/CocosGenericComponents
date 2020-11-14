@@ -9,9 +9,10 @@ namespace gcc.box2d.tools {
 	const { ccclass, property, menu } = cc._decorator;
 
 	export class CCB2DComp extends cc.Component {
-		toJson(): { oid: string } {
+		toJson(): { oid: string, skillType: string, } {
 			return {
 				oid: this.uuid,
+				skillType: "",
 			}
 		}
 	}
