@@ -206,9 +206,10 @@ namespace gcc.box2d.tools {
                 dataComp.linearVelocity = convCCVec2(comp.linearVelocity)
                 dataComp.angularVelocity = comp.angularVelocity
                 dataComp.fixedRotation = comp.fixedRotation
-                dataComp.awake = comp.awake
+                dataComp.awake = true
                 dataComp.awakeOnLoad = comp.awakeOnLoad
-                dataComp.active = comp.active
+                // dataComp.active = comp.active
+                dataComp.active = true
                 return dataComp
             }
         }
