@@ -195,6 +195,7 @@ namespace gcc.box2d.tools {
         handleRigidBody(comp: cc.RigidBody) {
             if (comp) {
                 let dataComp = new b2data.RigidBody()
+                dataComp.ctype = cc.RigidBody.name
                 dataComp.oid = comp.uuid
                 dataComp.enabledContactListener = comp.enabledContactListener
                 dataComp.bullet = comp.bullet
