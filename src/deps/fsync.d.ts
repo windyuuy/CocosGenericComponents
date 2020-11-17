@@ -354,46 +354,6 @@ declare namespace fsync.box2d.b2data {
         loadFromJson(json: Box2DBody): void;
     }
 }
-declare namespace fsync.box2d.b2data {
-    interface IB2ContactState {
-        /**
-         * 碰撞状态
-         * - begin 已发生碰撞时
-         * - on 进行中
-         * - end 碰撞结束时
-         */
-        state: "begin" | "on" | "end";
-        contact: b2.Contact;
-    }
-    interface IBox2DUserData {
-        /**
-         * 标记
-         */
-        name: string;
-        /**
-         * 自身唯一id
-         */
-        oid: string;
-        /**
-         * 对应模型节点的 oid
-         */
-        mid: string;
-    }
-    interface IBox2DFixtureData extends IBox2DUserData {
-        /**
-         * 产生的碰撞信息
-         */
-        contacts: IB2ContactState[];
-    }
-    interface IBox2DBodyData extends IBox2DUserData {
-        /**
-         * 产生的碰撞信息
-         */
-        contacts: IB2ContactState[];
-    }
-    interface IBox2DJointData extends IBox2DUserData {
-    }
-}
 declare namespace fsync.box2d {
     class Box2DHelper {
         getBodyAABB(b: b2.Body, vs: b2.AABB): b2.AABB;
@@ -442,6 +402,9 @@ declare namespace fsync.box2d.b2data {
         fixtures: b2.Fixture[];
         headBody: b2.Body;
         skillExtras: ISkillExtra[];
+        modelToTargetMap: {
+            [key: string]: string;
+        };
         updateUserData(uidTool: UniqueIDTool): void;
         calcAABB(): {
             x: number;
@@ -472,6 +435,52 @@ declare namespace fsync.box2d.b2data {
         loadFromJson(json: Box2DUnionData): void;
         updateParent(): void;
         createUnion(world: b2.World): Box2DUnion;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    interface IB2ContactState {
+        /**
+         * 碰撞状态
+         * - begin 已发生碰撞时
+         * - on 进行中
+         * - end 碰撞结束时
+         */
+        state: "begin" | "on" | "end";
+        contact: b2.Contact;
+    }
+    interface IBox2DUserData {
+        /**
+         * 标记
+         */
+        name: string;
+        /**
+         * 自身唯一id
+         */
+        oid: string;
+        /**
+         * 对应模型节点的 oid
+         */
+        mid: string;
+        /**
+         * 归属的unionId
+         */
+        unionId: string;
+        entityId?: string;
+    }
+    interface IBox2DFixtureData extends IBox2DUserData {
+        displayKey?: string;
+        /**
+         * 产生的碰撞信息
+         */
+        contacts: IB2ContactState[];
+    }
+    interface IBox2DBodyData extends IBox2DUserData {
+        /**
+         * 产生的碰撞信息
+         */
+        contacts: IB2ContactState[];
+    }
+    interface IBox2DJointData extends IBox2DUserData {
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -578,6 +587,22 @@ declare namespace fsync.box2d.b2data {
         groupIndex: string;
         categoryBits: string;
         maskBits: string;
+        loadFromJson(json: CollisionGroup): void;
+        static groupIndexMap: {
+            [key: string]: number;
+        };
+        static groupIndexAcc: number;
+        static categoryMap: {
+            [key: string]: number;
+        };
+        static categoryExpAcc: number;
+        static categoryExpMax: number;
+        updateCollisionGroup(): void;
+        protected updateCategorys(categoryBits: string): void;
+        protected mapCategorys(categoryBits: string): number;
+        getGroupIndex(): number;
+        getCategoryBits(): number;
+        getMaskBits(): number;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -631,7 +656,7 @@ declare namespace fsync.box2d.b2data {
         loadFromJson(json: Joint): void;
         updatePTMRatio(): void;
         createJointDef(mainBodyModelA: Box2DBody, bodyModelA: Box2DBody, mainBodyModelB: Box2DBody, bodyModelB: Box2DBody): b2.JointDef;
-        createJoint(world: b2.World, jointDef: b2.JointDef): b2.MotorJoint;
+        createJoint(world: b2.World, jointDef: b2.JointDef, unionId: string): b2.MotorJoint;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -689,11 +714,15 @@ declare namespace fsync.box2d.b2data {
         !#zh
         碰撞体会在初始化时查找节点上是否存在刚体，如果查找成功则赋值到这个属性上。 */
         body: RigidBody;
+        /**
+         * 仅展示画面用
+         */
+        displayKey?: string;
         loadFromJson(json: PhysicsCollider): void;
         createShape(mainBody: Box2DBody): b2.Shape;
         createShapes(mainBody: Box2DBody): b2.Shape[];
         createFixtureDef(): b2.FixtureDef;
-        createFixture(zoneBody: b2.Body, fixtureDef: b2.FixtureDef): b2.Fixture;
+        createFixture(zoneBody: b2.Body, fixtureDef: b2.FixtureDef, unionId: string): b2.Fixture;
         calcShaptPtInMainBody(mainBody: Box2DBody, shapePt: Vector2): Vec2;
     }
 }
@@ -954,7 +983,7 @@ declare namespace fsync.box2d.b2data {
         loadFromJson(json: RigidBody): void;
         updatePTMRatio(): void;
         createBodyDef(): b2.BodyDef;
-        createBody(name: string, world: b2.World, zoneBodyDef: b2.BodyDef): b2.Body;
+        createBody(name: string, world: b2.World, zoneBodyDef: b2.BodyDef, unionId: string): b2.Body;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -1644,6 +1673,7 @@ declare namespace fsync.ecsproxy {
          * id to target
          */
         toTarget: (id: string | number, comp: IComponent, key: string) => any;
+        toTargetArray?: (ids: (string | number)[], comp: IComponent, key: string) => any;
         /**
          * target to id
          */
