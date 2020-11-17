@@ -241,6 +241,14 @@ namespace gcc.box2d.tools {
             dataComp.sensor = comp.sensor
             dataComp.tag = comp.tag
 
+            let sprite = comp.getComponent(cc.Sprite)
+            if (sprite) {
+                if (sprite.spriteFrame) {
+                    let displayKey = sprite.spriteFrame.name
+                    dataComp.displayKey = displayKey
+                }
+            }
+
             return dataComp
         }
 
