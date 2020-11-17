@@ -64,7 +64,7 @@ namespace gcc.box2d.tools {
                 }
             }
 
-            for (let comp of node.getComponentsInChildren(CCB2DComp)) {
+            for (let comp of node.getComponentsInChildren(CCB2SkillComp)) {
                 let b2Comp = this.handleSkillComp(comp)
                 b2Node.skillExtras.push(b2Comp)
             }
@@ -94,9 +94,14 @@ namespace gcc.box2d.tools {
                     b2Body.components.push(b2Comp)
                 }
             }
+            // {
+            //     let b2Comp = this.handleTransform(node)
+            //     b2Body.components.push(b2Comp as any)
+            // }
+
             {
-                let b2Comp = this.handleTransform(node)
-                b2Body.components.push(b2Comp)
+                let collisionGroup = this.handleCollision(node)
+                b2Body.collisionGroup = collisionGroup
             }
 
             {
@@ -112,6 +117,19 @@ namespace gcc.box2d.tools {
             return b2Body
         }
 
+        handleCollision(node: cc.Node) {
+            let collisionGroup = new b2data.CollisionGroup()
+            let collisionComp = node.getComponent(CCB2CollisionComp)
+            if (collisionComp != null) {
+                let collisionInfo = collisionComp.toJson()
+                collisionGroup.enabled = true
+                collisionGroup.categoryBits = collisionInfo.categoryBits.replace("；", ";")
+                collisionGroup.groupIndex = collisionInfo.groupIndex.replace("；", ";")
+                collisionGroup.maskBits = collisionInfo.maskBits.replace("；", ";")
+            }
+            return collisionGroup
+        }
+
         handleTransform(node: cc.Node) {
             let transform = new b2data.Transform()
             transform.oid = "transform_" + node.uuid
@@ -121,8 +139,8 @@ namespace gcc.box2d.tools {
             return transform
         }
 
-        handleSkillComp(comp: CCB2DComp) {
-            if (comp instanceof CCB2DComp) {
+        handleSkillComp(comp: CCB2SkillComp) {
+            if (comp instanceof CCB2SkillComp) {
                 let data = comp.toJson()
                 let result = new b2data.SkillExtra()
                 for (let key of Object.getOwnPropertyNames(data)) {
@@ -222,6 +240,7 @@ namespace gcc.box2d.tools {
             dataComp.restitution = comp.restitution
             dataComp.sensor = comp.sensor
             dataComp.tag = comp.tag
+
             return dataComp
         }
 

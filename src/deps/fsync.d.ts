@@ -238,6 +238,11 @@ declare namespace fsync {
         static asVectorN<T extends IVector>(b: IVector): T;
         static asVector3(b: IVector): Vector3;
         static asVector4(b: IVector): Vector4;
+        /**
+         * 绕原点按笛卡尔坐标系弧度旋转
+         * @param v
+         */
+        static rotateSelfByZero2(v: Vector2, angle: number): Vector2;
     }
 }
 declare namespace fsync {
@@ -278,17 +283,26 @@ declare namespace fsync.box2d.b2data {
     export import Vec3 = fsync.Vector3;
     export import Vec4 = fsync.Vector4;
     export import Size = fsync.Size2;
+    type TFlip = 1 | -1;
     interface IBox2DModel {
         oid: string;
     }
-    class Component implements IBox2DModel {
+    class ComponentBase implements IBox2DModel {
         parent: Box2DParent;
-        loadFromJson(child: Component): void;
+        loadFromJson(child: ComponentBase): void;
         oid: string;
         ctype: string;
-        getWorldRotationZ(): number;
+        /**
+         * 缩放倍率
+         */
+        PTM_RATIO: number;
+        getPTMRatio(): number;
+        updatePTMRatio(): void;
+        getInUnionRotationZ(): number;
         getWorldFlipY(): number;
-        getWorldPosition2(): Vec2;
+    }
+    class Component extends ComponentBase {
+        parent: Box2DBody;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -304,7 +318,58 @@ declare namespace fsync.box2d.b2data {
     }
 }
 declare namespace fsync.box2d.b2data {
+    interface Box2DParent {
+        transform: Transform;
+        parent: Box2DParent;
+    }
+    class Box2DBody implements Box2DParent {
+        updateParent(): void;
+        name: string;
+        oid: string;
+        components: Component[];
+        transform: Transform;
+        collisionGroup: CollisionGroup;
+        parent: Box2DNode;
+        /**
+         * 缩放倍率
+         */
+        PTM_RATIO: number;
+        getNodeAngle(): number;
+        getBodyAngle(): number;
+        getInUnionPosition2(): Vec2;
+        getBodyFlip(): TFlip;
+        getNodeFlip(): TFlip;
+        getUnionFlip(): TFlip;
+        getMainBodyPosInUnion(): Vec2;
+        /**
+         * 计算body上的点在union上的坐标
+         * @param shapePt
+         */
+        calcShapePtInUnion(shapePt: Vec2): Vec2;
+        calcShaptPtInMainBody(mainBody: Box2DBody, shapePt: Vector2): Vec2;
+        calcJointAnchor(mainBody: Box2DBody, anchor: Vec2): Vec2;
+        getPTMRatio(): number;
+        findRigidBody(): RigidBody;
+        updatePTMRatio(): void;
+        loadFromJson(json: Box2DBody): void;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    interface IB2ContactState {
+        /**
+         * 碰撞状态
+         * - begin 已发生碰撞时
+         * - on 进行中
+         * - end 碰撞结束时
+         */
+        state: "begin" | "on" | "end";
+        contact: b2.Contact;
+    }
     interface IBox2DUserData {
+        /**
+         * 标记
+         */
+        name: string;
         /**
          * 自身唯一id
          */
@@ -318,18 +383,13 @@ declare namespace fsync.box2d.b2data {
         /**
          * 产生的碰撞信息
          */
-        contacts: {
-            /**
-         * 碰撞状态
-         * - begin 已发生碰撞时
-         * - on 进行中
-         * - end 碰撞结束时
-         */
-            state: "begin" | "on" | "end";
-            contact: b2.Contact;
-        }[];
+        contacts: IB2ContactState[];
     }
     interface IBox2DBodyData extends IBox2DUserData {
+        /**
+         * 产生的碰撞信息
+         */
+        contacts: IB2ContactState[];
     }
     interface IBox2DJointData extends IBox2DUserData {
     }
@@ -341,26 +401,18 @@ declare namespace fsync.box2d {
     const box2DHelper: Box2DHelper;
 }
 declare namespace fsync.box2d.b2data {
-    interface Box2DParent {
-        transform: Transform;
-        parent: Box2DParent;
-    }
-    class Box2DBody implements Box2DParent {
-        updateParent(): void;
-        name: string;
-        oid: string;
-        components: Component[];
-        transform: Transform;
-        parent: Box2DParent;
-        findRigidBody(): RigidBody;
-        loadFromJson(json: Box2DBody): void;
-    }
-    class Box2DNode implements IBox2DModel {
+    class Box2DNode implements IBox2DModel, Box2DParent {
         oid: string;
         name: string;
         children: Box2DBody[];
         transform: Transform;
-        parent: Box2DParent;
+        parent: Box2DUnionData;
+        /**
+         * 缩放倍率
+         */
+        PTM_RATIO: number;
+        getPTMRatio(): number;
+        updatePTMRatio(): void;
         /**
          * 所挂技能附件的信息
          */
@@ -370,14 +422,18 @@ declare namespace fsync.box2d.b2data {
     }
 }
 declare namespace fsync.box2d.b2data {
-    class Transform extends Component {
+    class Transform extends ComponentBase {
         position: Vec3;
         rotation: number;
-        flip: 1 | -1;
+        flip: TFlip;
         loadFromJson(json: Transform): void;
+        updatePTMRatio(): void;
     }
 }
 declare namespace fsync.box2d.b2data {
+    interface WithUserData {
+        GetUserData(): IBox2DUserData;
+    }
     class Box2DUnion implements IBox2DModel {
         oid: string;
         mid: string;
@@ -394,7 +450,9 @@ declare namespace fsync.box2d.b2data {
             height: number;
         };
     }
-    class Box2DUnionData implements IBox2DModel {
+    class Box2DUnionData implements IBox2DModel, Box2DParent {
+        transform: Transform;
+        parent: Box2DParent;
         oid: string;
         children: Box2DNode[];
         /**
@@ -405,7 +463,14 @@ declare namespace fsync.box2d.b2data {
          * 锚点主体
          */
         bodyName: string;
+        /**
+         * 缩放倍率
+         */
+        PTM_RATIO: number;
+        getPTMRatio(): number;
+        updatePTMRatio(): void;
         loadFromJson(json: Box2DUnionData): void;
+        updateParent(): void;
         createUnion(world: b2.World): Box2DUnion;
     }
 }
@@ -508,8 +573,22 @@ declare namespace fsync.box2d.b2data {
     }
 }
 declare namespace fsync.box2d.b2data {
+    class CollisionGroup {
+        enabled: boolean;
+        groupIndex: string;
+        categoryBits: string;
+        maskBits: string;
+    }
+}
+declare namespace fsync.box2d.b2data {
     interface FixedContact {
+        /**
+         * 区域ID
+         */
         connectZoneId: string;
+        /**
+         * 部件ID
+         */
         groupId: string;
     }
 }
@@ -550,7 +629,8 @@ declare namespace fsync.box2d.b2data {
         链接到关节上的两个刚体是否应该相互碰撞？ */
         collideConnected: boolean;
         loadFromJson(json: Joint): void;
-        createJointDef(): b2.JointDef;
+        updatePTMRatio(): void;
+        createJointDef(mainBodyModelA: Box2DBody, bodyModelA: Box2DBody, mainBodyModelB: Box2DBody, bodyModelB: Box2DBody): b2.JointDef;
         createJoint(world: b2.World, jointDef: b2.JointDef): b2.MotorJoint;
     }
 }
@@ -610,10 +690,11 @@ declare namespace fsync.box2d.b2data {
         碰撞体会在初始化时查找节点上是否存在刚体，如果查找成功则赋值到这个属性上。 */
         body: RigidBody;
         loadFromJson(json: PhysicsCollider): void;
-        createShape(): b2.Shape;
-        createShapes(): b2.Shape[];
+        createShape(mainBody: Box2DBody): b2.Shape;
+        createShapes(mainBody: Box2DBody): b2.Shape[];
         createFixtureDef(): b2.FixtureDef;
         createFixture(zoneBody: b2.Body, fixtureDef: b2.FixtureDef): b2.Fixture;
+        calcShaptPtInMainBody(mainBody: Box2DBody, shapePt: Vector2): Vec2;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -626,7 +707,8 @@ declare namespace fsync.box2d.b2data {
         !#zh 包围盒大小 */
         size: Size;
         loadFromJson(json: PhysicsBoxCollider): void;
-        createShape(): b2.PolygonShape;
+        updatePTMRatio(): void;
+        createShape(mainBody: Box2DBody): b2.PolygonShape;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -639,7 +721,8 @@ declare namespace fsync.box2d.b2data {
         !#zh 圆形半径 */
         radius: number;
         loadFromJson(json: PhysicsCircleCollider): void;
-        createShape(): b2.CircleShape;
+        updatePTMRatio(): void;
+        createShape(mainBody: Box2DBody): b2.CircleShape;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -652,7 +735,8 @@ declare namespace fsync.box2d.b2data {
         !#zh 多边形顶点数组 */
         points: Vec2[];
         loadFromJson(json: PhysicsPolygonCollider): void;
-        createShapes(): b2.PolygonShape[];
+        updatePTMRatio(): void;
+        createShapes(mainBody: Box2DBody): b2.PolygonShape[];
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -706,7 +790,8 @@ declare namespace fsync.box2d.b2data {
         期望的马达速度。 */
         motorSpeed: number;
         loadFromJson(json: PrismaticJoint): void;
-        createJointDef(): b2.PrismaticJointDef;
+        updatePTMRatio(): void;
+        createJointDef(mainBodyModelA: Box2DBody, bodyModelA: Box2DBody, mainBodyModelB: Box2DBody, bodyModelB: Box2DBody): b2.PrismaticJointDef;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -760,7 +845,7 @@ declare namespace fsync.box2d.b2data {
         是否开启关节马达？ */
         enableMotor: boolean;
         loadFromJson(json: RevoluteJoint): void;
-        createJointDef(): b2.RevoluteJointDef;
+        createJointDef(mainBodyModelA: Box2DBody, bodyModelA: Box2DBody, mainBodyModelB: Box2DBody, bodyModelB: Box2DBody): b2.RevoluteJointDef;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -867,8 +952,9 @@ declare namespace fsync.box2d.b2data {
         链接到非激活状态下刚体的关节也是非激活的。 */
         active: boolean;
         loadFromJson(json: RigidBody): void;
+        updatePTMRatio(): void;
         createBodyDef(): b2.BodyDef;
-        createBody(world: b2.World, zoneBodyDef: b2.BodyDef): b2.Body;
+        createBody(name: string, world: b2.World, zoneBodyDef: b2.BodyDef): b2.Body;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -913,7 +999,7 @@ declare namespace fsync.box2d.b2data {
         阻尼，表示关节变形后，恢复到初始状态受到的阻力。 */
         dampingRatio: number;
         loadFromJson(json: WheelJoint): void;
-        createJointDef(): b2.WheelJointDef;
+        createJointDef(mainBodyModelA: Box2DBody, bodyModelA: Box2DBody, mainBodyModelB: Box2DBody, bodyModelB: Box2DBody): b2.WheelJointDef;
     }
 }
 declare namespace lang.helper {
@@ -1652,7 +1738,9 @@ declare namespace fsync.ecsproxy {
         isSame(t: EntityProxyBase): bool;
         removeSelf(): void;
         Components: (new () => fsync.IComponent)[];
-        dynamicComps: string[];
+        dynamicComps: {
+            [key: string]: bool;
+        };
     }
 }
 declare namespace fsync.ecsproxy {
