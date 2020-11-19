@@ -8,6 +8,9 @@
 namespace gcc.box2d.tools {
 	const { ccclass, property, menu } = cc._decorator;
 
+	/**
+	 * 技能组件基类
+	 */
 	@ccclass
 	export class CCB2SkillComp extends cc.Component {
 		toJson(): { oid: string, skillType: string, } {

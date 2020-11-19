@@ -18,6 +18,9 @@ namespace gcc.box2d.tools {
         return fsync.Size3.fromSize3Like(size3)
     }
 
+    /**
+     * box2d预制体导出工具
+     */
     export class Box2DExport {
         static inst: Box2DExport = new Box2DExport()
 
@@ -38,6 +41,11 @@ namespace gcc.box2d.tools {
             })
         }
 
+        /**
+         * 转换预制体
+         * @param prefab 
+         * @param outDir 
+         */
         handleBox2dPrefab(prefab: cc.Prefab, outDir: string) {
             let b2Node = this.convBox2dPrefab(prefab)
 
@@ -53,6 +61,11 @@ namespace gcc.box2d.tools {
             return this.convBox2dNode(prefab.name, node)
         }
 
+        /**
+         * 转换节点
+         * @param name 
+         * @param node 
+         */
         convBox2dNode(name: string, node: cc.Node): b2data.Box2DNode {
             let b2Node = new b2data.Box2DNode()
             b2Node.oid = node.uuid
@@ -82,6 +95,10 @@ namespace gcc.box2d.tools {
             return b2Node
         }
 
+        /**
+         * 转换含有rigidbody的子节点
+         * @param node 
+         */
         handleBox2dBody(node: cc.Node) {
             let b2Body = new b2data.Box2DBody()
             b2Body.name = node.name
@@ -100,7 +117,7 @@ namespace gcc.box2d.tools {
             // }
 
             {
-                let collisionGroup = this.handleCollision(node)
+                let collisionGroup = this.handleCollisionGroup(node)
                 b2Body.collisionGroup = collisionGroup
             }
 
@@ -117,19 +134,27 @@ namespace gcc.box2d.tools {
             return b2Body
         }
 
-        handleCollision(node: cc.Node) {
+        /**
+         * 转换碰撞分组信息
+         * @param node 
+         */
+        handleCollisionGroup(node: cc.Node) {
             let collisionGroup = new b2data.CollisionGroup()
             let collisionComp = node.getComponent(CCB2CollisionComp)
             if (collisionComp != null) {
                 let collisionInfo = collisionComp.toJson()
                 collisionGroup.enabled = true
-                collisionGroup.categoryBits = collisionInfo.categoryBits.replace("；", ";")
-                collisionGroup.groupIndex = collisionInfo.groupIndex.replace("；", ";")
-                collisionGroup.maskBits = collisionInfo.maskBits.replace("；", ";")
+                collisionGroup.categoryBits = (collisionInfo.categoryBits || "").replace("；", ";")
+                collisionGroup.groupIndex = (collisionInfo.groupIndex || "").replace("；", ";")
+                collisionGroup.maskBits = (collisionInfo.maskBits || "").replace("；", ";")
             }
             return collisionGroup
         }
 
+        /**
+         * 转换方位
+         * @param node 
+         */
         handleTransform(node: cc.Node) {
             let transform = new b2data.Transform()
             transform.oid = "transform_" + node.uuid
@@ -139,6 +164,10 @@ namespace gcc.box2d.tools {
             return transform
         }
 
+        /**
+         * 转换技能组件
+         * @param comp 
+         */
         handleSkillComp(comp: CCB2SkillComp) {
             if (comp instanceof CCB2SkillComp) {
                 let data = comp.toJson()
@@ -151,9 +180,16 @@ namespace gcc.box2d.tools {
             return null
         }
 
+        /**
+         * 转换box2d组件
+         * @param comp 
+         */
         handleBox2dComponent(comp: cc.Component) {
             let name = comp.constructor.name
             let handleKey = name.substr(3)
+            /**
+             * 反射转换组件处理函数
+             */
             let call = this[`handle${handleKey}`] as (comp: cc.Component) => b2data.Component
             if (call) {
                 let b2Comp = call.call(this, comp)
@@ -167,6 +203,9 @@ namespace gcc.box2d.tools {
         }
 
         handlers: { [key: string]: Function } = {}
+        /**
+         * 注册box2d组件转换函数
+         */
         registerHandler() {
             this.handlers[cc.RigidBody.name] = (comp) => this.handleRigidBody(comp)
             this.handlers[cc.PhysicsPolygonCollider.name] = (comp) => this.handlePhysicsPolygonCollider(comp)

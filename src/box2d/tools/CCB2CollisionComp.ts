@@ -8,6 +8,11 @@
 namespace gcc.box2d.tools {
 	const { ccclass, property, menu } = cc._decorator;
 
+
+	/**
+	 * 碰撞组件基类
+	 * - 包括设置分组信息
+	 */
 	@ccclass
 	export class CCB2CollisionComp extends cc.Component {
 		toJson(): { oid: string, groupIndex: string, categoryBits: string, maskBits: string, } {
