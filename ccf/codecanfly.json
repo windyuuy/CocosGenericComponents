@@ -1,6 +1,6 @@
 {
 	"name": "gcccomps",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"files": [
 		"gcccomps.js",
 		"gcccomps.d.ts",
