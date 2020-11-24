@@ -19,5 +19,28 @@ namespace gcc.box2d.tools {
 				skillType: "",
 			}
 		}
+
+		getSelfUID() {
+			return this.getCompUID(this)
+		}
+
+		getBodyNodeUID(node: cc.Node) {
+			return nodeUIDTool.getBodyNodeUID(node)
+			// return `uid^${node.parent.name}^${node.name}`
+			// return node.uuid
+		}
+
+		getCompUID(comp: cc.Component) {
+			return nodeUIDTool.getCompUID(comp)
+			// return `uid^${comp.node.parent.name}^${comp.node.name}^${comp.name}`
+			// return comp.uuid
+		}
+
+		getNodeUID(node: cc.Node) {
+			return nodeUIDTool.getNodeUID(node)
+			// return `uid^${node.name}`
+			// return node.uuid
+		}
+
 	}
 }

@@ -27,7 +27,7 @@ namespace gcc.box2d.tools {
         writeFile(fileName: string, ss: string) {
             if (window["Editor"]) {
                 // console.log("export file:", fileName)
-                Editor.warn("export file:", fileName)
+                Editor.log("export file:", fileName)
                 const fs = window['require']('fs');
                 fs.writeFileSync(fileName, ss)
             }
@@ -53,6 +53,7 @@ namespace gcc.box2d.tools {
          * @param outDir 
          */
         handleBox2dPrefab(prefab: cc.Prefab, outDir: string) {
+            nodeUIDTool.reset()
             let b2Node = this.convBox2dPrefab(prefab)
 
             let sentences = b2data.exportB2NodeToTypescript(b2Node)
@@ -63,8 +64,30 @@ namespace gcc.box2d.tools {
         }
 
         convBox2dPrefab(prefab: cc.Prefab): b2data.Box2DNode {
-            let node = cc.instantiate(prefab)
-            return this.convBox2dNode(prefab.name, node)
+            // let node = cc.instantiate(prefab)
+            let node = prefab.data as cc.Node
+            this.detectDuplicatedChildName(node)
+            let model = this.convBox2dNode(prefab.name, node)
+            return model
+        }
+
+        /**
+         * 检测重名子节点，保证简化版uid一致
+         */
+        detectDuplicatedChildName(node: cc.Node) {
+            let map: { [key: string]: boolean } = {}
+            node.children.forEach(child => {
+                if (!map[child.name]) {
+                    map[child.name] = true
+                } else {
+                    let tip = `detectDuplicatedChildName: ${child.parent.name}/${child.name}`
+                    if (window["Editor"]) {
+                        Editor.error(tip)
+                    } else {
+                        throw new Error(tip)
+                    }
+                }
+            })
         }
 
         /**
@@ -102,18 +125,21 @@ namespace gcc.box2d.tools {
         }
 
         getBodyNodeUID(node: cc.Node) {
-            // return `uid/${node.parent.name}/${node.name}`
-            return node.uuid
+            return nodeUIDTool.getBodyNodeUID(node)
+            // return `uid^${node.parent.name}^${node.name}`
+            // return node.uuid
         }
 
         getCompUID(comp: cc.Component) {
-            // return `uid/${comp.node.parent.name}/${comp.node.name}/${comp.name}`
-            return comp.uuid
+            return nodeUIDTool.getCompUID(comp)
+            // return `uid^${comp.node.parent.name}^${comp.node.name}^${comp.name}`
+            // return comp.uuid
         }
 
         getNodeUID(node: cc.Node) {
-            // return `uid/${node.name}`
-            return node.uuid
+            return nodeUIDTool.getNodeUID(node)
+            // return `uid^${node.name}`
+            // return node.uuid
         }
 
         /**
