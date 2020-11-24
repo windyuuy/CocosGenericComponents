@@ -33,11 +33,17 @@ namespace gcc.box2d.tools {
             }
         }
 
-        exportPrefabs(dir: string, outDir: string) {
+        exportPrefabs(dir: string, outDir: string, call?: (err) => void) {
             cc.loader.loadResDir(dir, cc.Prefab, (err, reses: cc.Prefab[]) => {
-                for (let res of reses) {
-                    this.handleBox2dPrefab(res, outDir)
+                if (!err) {
+                    for (let res of reses) {
+                        this.handleBox2dPrefab(res, outDir)
+                    }
+                    if (window["Editor"]) {
+                        Editor.warn("export file:", `导出目录 ${dir} 结束。`)
+                    }
                 }
+                call && call(err)
             })
         }
 
@@ -68,7 +74,7 @@ namespace gcc.box2d.tools {
          */
         convBox2dNode(name: string, node: cc.Node): b2data.Box2DNode {
             let b2Node = new b2data.Box2DNode()
-            b2Node.oid = node.uuid
+            b2Node.oid = this.getNodeUID(node)
             b2Node.name = name
             for (let child of node.children) {
                 if (!!child.getComponent(cc.RigidBody)) {
@@ -84,7 +90,7 @@ namespace gcc.box2d.tools {
 
             {
                 let transform = new b2data.Transform()
-                transform.oid = "transform_" + node.uuid
+                transform.oid = "transform_" + this.getNodeUID(node)
                 transform.position = convCCVec3(node.position)
                 transform.rotation = -node.angle
                 transform.ctype = "transform"
@@ -95,6 +101,21 @@ namespace gcc.box2d.tools {
             return b2Node
         }
 
+        getBodyNodeUID(node: cc.Node) {
+            // return `uid/${node.parent.name}/${node.name}`
+            return node.uuid
+        }
+
+        getCompUID(comp: cc.Component) {
+            // return `uid/${comp.node.parent.name}/${comp.node.name}/${comp.name}`
+            return comp.uuid
+        }
+
+        getNodeUID(node: cc.Node) {
+            // return `uid/${node.name}`
+            return node.uuid
+        }
+
         /**
          * 转换含有rigidbody的子节点
          * @param node 
@@ -102,12 +123,12 @@ namespace gcc.box2d.tools {
         handleBox2dBody(node: cc.Node) {
             let b2Body = new b2data.Box2DBody()
             b2Body.name = node.name
-            b2Body.oid = node.uuid
-            for (let comp of (node['_components'] as cc.Component[])) {
+            b2Body.oid = this.getBodyNodeUID(node)
+            for (let comp of node.getComponents(cc.Component)) {
                 let b2Comp = this.handleBox2dComponent(comp) as b2data.Component
                 if (b2Comp) {
                     b2Comp.ctype = comp.constructor.name
-                    b2Comp.oid = comp.uuid
+                    b2Comp.oid = this.getCompUID(comp)
                     b2Body.components.push(b2Comp)
                 }
             }
@@ -123,7 +144,7 @@ namespace gcc.box2d.tools {
 
             {
                 let transform = new b2data.Transform()
-                transform.oid = "transform_" + node.uuid
+                transform.oid = "transform_" + this.getBodyNodeUID(node)
                 transform.position = convCCVec3(node.position)
                 transform.rotation = -node.angle
                 transform.ctype = "transform"
@@ -151,18 +172,18 @@ namespace gcc.box2d.tools {
             return collisionGroup
         }
 
-        /**
-         * 转换方位
-         * @param node 
-         */
-        handleTransform(node: cc.Node) {
-            let transform = new b2data.Transform()
-            transform.oid = "transform_" + node.uuid
-            transform.position = convCCVec3(node.position)
-            transform.rotation = -node.angle
-            transform.ctype = "transform"
-            return transform
-        }
+        // /**
+        //  * 转换方位
+        //  * @param node 
+        //  */
+        // handleTransform(node: cc.Node) {
+        //     let transform = new b2data.Transform()
+        //     transform.oid = "transform_" + this.getBodyNodeUID(node)
+        //     transform.position = convCCVec3(node.position)
+        //     transform.rotation = -node.angle
+        //     transform.ctype = "transform"
+        //     return transform
+        // }
 
         /**
          * 转换技能组件
@@ -222,7 +243,7 @@ namespace gcc.box2d.tools {
             dataComp.enableMotor = comp.enableMotor
             dataComp.localAxisA = convCCVec2(comp.localAxisA)
             dataComp.motorSpeed = comp.motorSpeed
-            dataComp.oid = comp.uuid
+            dataComp.oid = this.getCompUID(comp)
 
             dataComp.localAxisA = convCCVec2(comp.localAxisA)
             dataComp.referenceAngle = comp.referenceAngle
@@ -245,7 +266,7 @@ namespace gcc.box2d.tools {
             dataComp.localAxisA = convCCVec2(comp.localAxisA)
             dataComp.maxMotorTorque = comp.maxMotorTorque
             dataComp.motorSpeed = comp.motorSpeed
-            dataComp.oid = comp.uuid
+            dataComp.oid = this.getCompUID(comp)
             return dataComp
         }
 
@@ -253,7 +274,7 @@ namespace gcc.box2d.tools {
             if (comp) {
                 let dataComp = new b2data.RigidBody()
                 dataComp.ctype = cc.RigidBody.name
-                dataComp.oid = comp.uuid
+                dataComp.oid = this.getCompUID(comp)
                 dataComp.enabledContactListener = comp.enabledContactListener
                 dataComp.bullet = comp.bullet
                 dataComp.type = comp.type
