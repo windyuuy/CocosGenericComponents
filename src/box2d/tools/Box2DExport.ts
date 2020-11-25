@@ -150,7 +150,10 @@ namespace gcc.box2d.tools {
             let b2Body = new b2data.Box2DBody()
             b2Body.name = node.name
             b2Body.oid = this.getBodyNodeUID(node)
-            for (let comp of node.getComponents(cc.Component)) {
+            let comps = node.getComponents(cc.Component)
+                // 过滤掉禁用的
+                .filter(comp => comp.enabled)
+            for (let comp of comps) {
                 let b2Comp = this.handleBox2dComponent(comp) as b2data.Component
                 if (b2Comp) {
                     b2Comp.ctype = comp.constructor.name
@@ -216,7 +219,7 @@ namespace gcc.box2d.tools {
          * @param comp 
          */
         handleSkillComp(comp: CCB2SkillComp) {
-            if (comp instanceof CCB2SkillComp) {
+            if (comp instanceof CCB2SkillComp && comp.enabled) {
                 let data = comp.toJson()
                 let result = new b2data.SkillExtra()
                 for (let key of Object.getOwnPropertyNames(data)) {
