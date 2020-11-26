@@ -194,9 +194,9 @@ namespace gcc.box2d.tools {
             if (collisionComp != null) {
                 let collisionInfo = collisionComp.toJson()
                 collisionGroup.enabled = true
-                collisionGroup.categoryBits = (collisionInfo.categoryBits || "").replace("；", ";")
-                collisionGroup.groupIndex = (collisionInfo.groupIndex || "").replace("；", ";")
-                collisionGroup.maskBits = (collisionInfo.maskBits || "").replace("；", ";")
+                collisionGroup.categoryBits = (collisionInfo.categoryBits || "").replace(/；/mg, ";")
+                collisionGroup.groupIndex = (collisionInfo.groupIndex || "").replace(/；/mg, ";")
+                collisionGroup.maskBits = (collisionInfo.maskBits || "").replace(/；/mg, ";")
             }
             return collisionGroup
         }

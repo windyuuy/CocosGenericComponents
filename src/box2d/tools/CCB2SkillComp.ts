@@ -20,8 +20,16 @@ namespace gcc.box2d.tools {
 			}
 		}
 
+		getSelfRigidBody() {
+			return this.getComponent(cc.RigidBody)
+		}
+
 		getSelfUID() {
 			return this.getCompUID(this)
+		}
+
+		getSelfNodeUID() {
+			return this.getBodyNodeUID(this.node)
 		}
 
 		getBodyNodeUID(node: cc.Node) {
