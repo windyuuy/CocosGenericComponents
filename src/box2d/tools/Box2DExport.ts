@@ -33,11 +33,20 @@ namespace gcc.box2d.tools {
             }
         }
 
-        exportPrefabs(dir: string, outDir: string, call?: (err) => void) {
+        /**
+         * 
+         * @param dir 
+         * @param outDir 
+         * @param call 
+         * @param throwAnyError 抛出任何异常,并打断当前导出流程
+         */
+        exportPrefabs(dir: string, outDir: string, call?: (err) => void, throwAnyError: boolean = true) {
             cc.loader.loadResDir(dir, cc.Prefab, (err, reses: cc.Prefab[]) => {
                 if (!err) {
                     for (let res of reses) {
-                        this.handleBox2dPrefab(res, outDir)
+                        this.tryRun(`导出预制体失败: ${res.name}`, () => {
+                            this.handleBox2dPrefab(res, outDir)
+                        }, throwAnyError)
                     }
                     if (window["Editor"]) {
                         Editor.warn("export file:", `导出目录 ${dir} 结束。`)
@@ -63,10 +72,25 @@ namespace gcc.box2d.tools {
             this.writeFile(`${outDir}/${prefab.name}.json`, JSON.stringify(b2Node))
         }
 
+        tryRun(tip: string, call: Function, reThrow: boolean = true) {
+            try {
+                return call && call()
+            } catch (e) {
+                if (window["Editor"]) {
+                    Editor.error(tip)
+                } else {
+                    console.error(tip)
+                }
+                if (reThrow) {
+                    throw e
+                }
+            }
+        }
+
         convBox2dPrefab(prefab: cc.Prefab): b2data.Box2DNode {
             // let node = cc.instantiate(prefab)
             let node = prefab.data as cc.Node
-            this.detectDuplicatedChildName(node)
+            // this.detectDuplicatedChildName(node)
             let model = this.convBox2dNode(prefab.name, node)
             return model
         }
@@ -167,8 +191,10 @@ namespace gcc.box2d.tools {
             // }
 
             {
-                let collisionGroup = this.handleCollisionGroup(node)
-                b2Body.collisionGroup = collisionGroup
+                this.tryRun(`转换碰撞分组信息失败: ${node.parent.name}/${node.name}`, () => {
+                    let collisionGroup = this.handleCollisionGroup(node)
+                    b2Body.collisionGroup = collisionGroup
+                })
             }
 
             {
@@ -219,15 +245,17 @@ namespace gcc.box2d.tools {
          * @param comp 
          */
         handleSkillComp(comp: CCB2SkillComp) {
-            if (comp instanceof CCB2SkillComp && comp.enabled) {
-                let data = comp.toJson()
-                let result = new b2data.SkillExtra()
-                for (let key of Object.getOwnPropertyNames(data)) {
-                    result[key] = data[key]
+            return this.tryRun(`转换组件失败: ${comp.node.parent.name}/${comp.node.name}/${comp.name}`, () => {
+                if (comp instanceof CCB2SkillComp && comp.enabled) {
+                    let data = comp.toJson()
+                    let result = new b2data.SkillExtra()
+                    for (let key of Object.getOwnPropertyNames(data)) {
+                        result[key] = data[key]
+                    }
+                    return result as b2data.ISkillExtra
                 }
-                return result as b2data.ISkillExtra
-            }
-            return null
+                return null
+            })
         }
 
         /**
@@ -235,21 +263,23 @@ namespace gcc.box2d.tools {
          * @param comp 
          */
         handleBox2dComponent(comp: cc.Component) {
-            let name = comp.constructor.name
-            let handleKey = name.substr(3)
-            /**
-             * 反射转换组件处理函数
-             */
-            let call = this[`handle${handleKey}`] as (comp: cc.Component) => b2data.Component
-            if (call) {
-                let b2Comp = call.call(this, comp)
-                return b2Comp
-            } else {
-                if (["cc_Sprite"].indexOf(name) < 0) {
-                    console.log(`skip handle ${name}`)
+            return this.tryRun(`转换box2d组件失败: ${comp.node.parent.name}/${comp.node.name}/${comp.name}`, () => {
+                let name = comp.constructor.name
+                let handleKey = name.substr(3)
+                /**
+                 * 反射转换组件处理函数
+                 */
+                let call = this[`handle${handleKey}`] as (comp: cc.Component) => b2data.Component
+                if (call) {
+                    let b2Comp = call.call(this, comp)
+                    return b2Comp
+                } else {
+                    if (["cc_Sprite"].indexOf(name) < 0) {
+                        console.log(`skip handle ${name}`)
+                    }
                 }
-            }
-            return null
+                return null
+            })
         }
 
         handlers: { [key: string]: Function } = {}
