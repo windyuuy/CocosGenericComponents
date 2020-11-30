@@ -293,6 +293,7 @@ namespace gcc.box2d.tools {
             this.handlers[cc.PhysicsBoxCollider.name] = (comp) => this.handlePhysicsBoxCollider(comp)
             this.handlers[cc.PhysicsCircleCollider.name] = (comp) => this.handlePhysicsCircleCollider(comp)
             this.handlers[cc.WheelJoint.name] = (comp) => this.handleWheelJoint(comp)
+            this.handlers[cc.WeldJoint.name] = (comp) => this.handleWeldJoint(comp)
             this.handlers[cc.PrismaticJoint.name] = (comp) => this.handlePrismaticJoint(comp)
         }
 
@@ -325,6 +326,16 @@ namespace gcc.box2d.tools {
             dataComp.localAxisA = convCCVec2(comp.localAxisA)
             dataComp.maxMotorTorque = comp.maxMotorTorque
             dataComp.motorSpeed = comp.motorSpeed
+            dataComp.oid = this.getCompUID(comp)
+            return dataComp
+        }
+
+        handleWeldJoint(comp: cc.WeldJoint) {
+            let dataComp = new b2data.WeldJoint()
+            this.copyJointAttrs(dataComp, comp)
+            dataComp.referenceAngle = comp.referenceAngle
+            dataComp.dampingRatio = comp.dampingRatio
+            dataComp.frequency = comp.frequency
             dataComp.oid = this.getCompUID(comp)
             return dataComp
         }

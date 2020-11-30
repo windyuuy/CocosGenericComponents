@@ -69,6 +69,7 @@ declare namespace fsync {
 declare namespace fsync {
     interface IVector extends IClone {
         getBinData(): number[];
+        clone(): IVector;
     }
     function toDegree(a: number): number;
     class NumberArray {
@@ -236,6 +237,7 @@ declare namespace fsync {
          */
         static getRotation2(b: IVector): Vector3;
         static asVectorN<T extends IVector>(b: IVector): T;
+        static asVector2(b: IVector): Vector2;
         static asVector3(b: IVector): Vector3;
         static asVector4(b: IVector): Vector4;
         /**
@@ -322,6 +324,9 @@ declare namespace fsync.box2d.b2data {
         transform: Transform;
         parent: Box2DParent;
     }
+    /**
+     * 对应带有rigidbody组件的节点
+     */
     class Box2DBody implements Box2DParent {
         updateParent(): void;
         name: string;
@@ -341,16 +346,21 @@ declare namespace fsync.box2d.b2data {
         getNodeFlip(): TFlip;
         getUnionFlip(): TFlip;
         getMainBodyPosInUnion(): Vec2;
+        getMainBodyPosInWorld(): Vec2;
         /**
          * 计算body上的点在union上的坐标
          * @param shapePt
          */
         calcShapePtInUnion(shapePt: Vec2): Vec2;
-        calcShaptPtInMainBody(mainBody: Box2DBody, shapePt: Vector2): Vec2;
+        calcShapePtInWorld(shapePt: Vec2): Vec2;
+        calcAngleInFixture(mainBody: Box2DBody): number;
+        calcFlipInMainBody(mainBody: Box2DBody): number;
+        calcShapePtInMainBody(mainBody: Box2DBody, shapePt: Vector2): Vec2;
         calcJointAnchor(mainBody: Box2DBody, anchor: Vec2): Vec2;
         getPTMRatio(): number;
         findRigidBody(): RigidBody;
         updatePTMRatio(): void;
+        getUnionData(): Box2DUnionData;
         loadFromJson(json: Box2DBody): void;
     }
 }
@@ -361,6 +371,19 @@ declare namespace fsync.box2d {
     const box2DHelper: Box2DHelper;
 }
 declare namespace fsync.box2d.b2data {
+    /**
+     * 节点皮肤信息
+     */
+    class NodeSkinInfo {
+        skinId: number;
+        parent: Box2DNode;
+        loadFromJson(json: NodeSkinInfo): void;
+        getSkinId(): number;
+        setSkinId(skinId: number): void;
+    }
+    /**
+     * 对应box预制体根节点
+     */
     class Box2DNode implements IBox2DModel, Box2DParent {
         oid: string;
         name: string;
@@ -371,6 +394,14 @@ declare namespace fsync.box2d.b2data {
          * 缩放倍率
          */
         PTM_RATIO: number;
+        /**
+         * 图层顺序
+         */
+        layerOrder: number;
+        /**
+         * 皮肤信息
+         */
+        skinInfo: NodeSkinInfo;
         getPTMRatio(): number;
         updatePTMRatio(): void;
         /**
@@ -378,15 +409,32 @@ declare namespace fsync.box2d.b2data {
          */
         skillExtras: ISkillExtra[];
         updateParent(): void;
-        loadFromJson(obj: Box2DNode): void;
+        loadFromJson(json: Box2DNode): void;
     }
 }
 declare namespace fsync.box2d.b2data {
     class Transform extends ComponentBase {
+        /**
+         * 相对坐标
+         */
         position: Vec3;
+        /**
+         * 旋转弧度/角度
+         * - 加载阶段会从cocos角度值转换为box2d内部使用的弧度值
+         */
         rotation: number;
+        /**
+         * 按x轴翻转
+         */
         flip: TFlip;
+        /**
+         * 从json加载box2d纯数据模型对象
+         * @param json
+         */
         loadFromJson(json: Transform): void;
+        /**
+         * 更新缩放倍率
+         */
         updatePTMRatio(): void;
     }
 }
@@ -395,25 +443,51 @@ declare namespace fsync.box2d.b2data {
         GetUserData(): IBox2DUserData;
     }
     class Box2DUnion implements IBox2DModel {
+        name: string;
+        /**
+         * 标签列表，可调试用
+         */
+        tags: string[];
         oid: string;
         mid: string;
         bodies: b2.Body[];
         joints: b2.Joint[];
         fixtures: b2.Fixture[];
+        outsideFixture: b2.Fixture[];
         headBody: b2.Body;
+        isOutsideHeadBody: bool;
         skillExtras: ISkillExtra[];
         modelToTargetMap: {
             [key: string]: string;
         };
+        box2dUnionData: Box2DUnionData;
         updateUserData(uidTool: UniqueIDTool): void;
+        getFixturesByModelId(id: string): b2.Fixture[];
+        getFixturesByBodyModel(bodyModel: Box2DBody): b2.Fixture[];
+        getFixturesByNodeModel(nodeModel: Box2DNode): b2.Fixture[];
         calcAABB(): {
             x: number;
             y: number;
             width: number;
             height: number;
         };
+        setPosition(pos: b2data.Vec2): void;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    class UnionSkinInfo {
+        skinId: number;
+        parent: Box2DUnionData;
+        loadFromJson(json: UnionSkinInfo): void;
+        getSkinId(): number;
+        setSkinId(skinId: number): void;
     }
     class Box2DUnionData implements IBox2DModel, Box2DParent {
+        name: string;
+        /**
+         * 标签列表，可调试用
+         */
+        tags: string[];
         transform: Transform;
         parent: Box2DParent;
         oid: string;
@@ -430,10 +504,29 @@ declare namespace fsync.box2d.b2data {
          * 缩放倍率
          */
         PTM_RATIO: number;
+        /**
+         * 队伍归属，用于碰撞分组
+         */
+        team: number;
+        /**
+         * 所有队伍
+         */
+        totalTeams: number[];
+        /**
+         * 皮肤信息
+         */
+        skinInfo: UnionSkinInfo;
+        /**
+         * 外部关联信息
+         */
+        outsideFixedContact: OutsideFixedContact;
+        calcPtInParent(pt: Vec2): Vec2;
         getPTMRatio(): number;
         updatePTMRatio(): void;
         loadFromJson(json: Box2DUnionData): void;
         updateParent(): void;
+        getBelongedZoneId(body: Box2DBody): string;
+        getBelongedZone(body: Box2DBody): Box2DBody;
         createUnion(world: b2.World): Box2DUnion;
     }
 }
@@ -473,6 +566,10 @@ declare namespace fsync.box2d.b2data {
          * 产生的碰撞信息
          */
         contacts: IB2ContactState[];
+        /**
+         * fixture相对body的坐标
+         */
+        transform?: Transform;
     }
     interface IBox2DBodyData extends IBox2DUserData {
         /**
@@ -485,6 +582,7 @@ declare namespace fsync.box2d.b2data {
 }
 declare namespace fsync.box2d.b2data {
     class ContactListnener extends b2.ContactListener {
+        mm: {};
         /**
         * Called when two fixtures begin to touch.
         * 当两个fixture碰撞时，触发该函数
@@ -519,6 +617,7 @@ declare namespace fsync.box2d.b2data {
     }
     class Box2DWorld {
         gravity: Vec2;
+        concatListener: ContactListnener;
         loadFromJson(json: Box2DWorld): void;
         createWorld(): b2.World;
     }
@@ -587,6 +686,9 @@ declare namespace fsync.box2d.b2data {
         groupIndex: string;
         categoryBits: string;
         maskBits: string;
+        team: number;
+        totalTeams: number[];
+        setTeamInfo(team: number, totalTeams: number[]): void;
         loadFromJson(json: CollisionGroup): void;
         static groupIndexMap: {
             [key: string]: number;
@@ -599,20 +701,27 @@ declare namespace fsync.box2d.b2data {
         static categoryExpMax: number;
         updateCollisionGroup(): void;
         protected updateCategorys(categoryBits: string): void;
+        protected expandCategoryTeams(category: string, call: (c: string) => void): void;
         protected mapCategorys(categoryBits: string): number;
         getGroupIndex(): number;
+        /**
+        * 表示刚体的分组信息，但不决定要碰撞的分组对象。另外，值得注意的，这个值必须是2的N次方。当然设置成其他值，程序不会报错，但是实际的碰撞分类效果，可能会出现意想不到的差错。
+        */
         getCategoryBits(): number;
+        /**
+        * 表示刚体要碰撞的那个刚体分组对象。这个值通常是另外一个FilterData对象的categoryBits属性，表示只与该类刚体发生碰撞。如果要对多组刚体进行碰撞，可以设置maskBits为多个categoryBits的加合。如要和categoryBits分别为2和4的刚体组都进行碰撞，可以设置maskBits属性为6。
+        */
         getMaskBits(): number;
     }
 }
 declare namespace fsync.box2d.b2data {
     interface FixedContact {
         /**
-         * 区域ID
+         * 区域ID (rigidbody id)
          */
         connectZoneId: string;
         /**
-         * 部件ID
+         * 部件ID (rigidbody id)
          */
         groupId: string;
     }
@@ -620,10 +729,12 @@ declare namespace fsync.box2d.b2data {
 declare namespace fsync.box2d.b2data {
     interface ISkillExtra {
         oid: string;
+        noid: string;
         skillType: string;
     }
     class SkillExtra implements ISkillExtra {
         oid: string;
+        noid: string;
         skillType: string;
     }
 }
@@ -665,6 +776,13 @@ declare namespace fsync.box2d.b2data {
     function exportArrayToTypescript(sentences: string[], depth: number, parentName: string, varname: string | number, node: Object): void;
     function exportObjectToTypescript(sentences: string[], depth: number, parentName: string, varname: string | number, node: Object): void;
     function exportB2NodeToTypescript(b2Node: Box2DNode): string[];
+}
+declare namespace fsync.box2d.b2data {
+    class OutsideFixedContact {
+        fixedContacts: FixedContact[];
+        bodies: b2.Body[];
+        bodyModels: Box2DBody[];
+    }
 }
 declare namespace fsync.box2d.b2data {
     const ANGLE_TO_PHYSICS_ANGLE: number;
@@ -984,6 +1102,33 @@ declare namespace fsync.box2d.b2data {
         updatePTMRatio(): void;
         createBodyDef(): b2.BodyDef;
         createBody(name: string, world: b2.World, zoneBodyDef: b2.BodyDef, unionId: string): b2.Body;
+    }
+}
+declare namespace fsync.box2d.b2data {
+    /** !#en
+    A weld joint essentially glues two bodies together. A weld joint may
+    distort somewhat because the island constraint solver is approximate.
+    !#zh
+    熔接关节相当于将两个刚体粘在了一起。
+    熔接关节可能会使某些东西失真，因为约束求解器算出的都是近似值。 */
+    class WeldJoint extends Joint {
+        /** !#en
+        The reference angle.
+        !#zh
+        相对角度。 */
+        referenceAngle: number;
+        /** !#en
+        The frequency.
+        !#zh
+        弹性系数。 */
+        frequency: number;
+        /** !#en
+        The damping ratio.
+        !#zh
+        阻尼，表示关节变形后，恢复到初始状态受到的阻力。 */
+        dampingRatio: number;
+        loadFromJson(json: WeldJoint): void;
+        createJointDef(mainBodyModelA: Box2DBody, bodyModelA: Box2DBody, mainBodyModelB: Box2DBody, bodyModelB: Box2DBody): b2.WeldJointDef;
     }
 }
 declare namespace fsync.box2d.b2data {
@@ -1436,11 +1581,13 @@ declare namespace fsync {
     class SystemBase implements IUpdater {
         world: ECSWorld;
         protected _commondBuffer: ECSCommandBuffer;
+        protected _commondBufferAfterUpdate: ECSCommandBuffer;
         ctype: string;
         get timer(): fsync.Timer | undefined;
         init(): this;
         instantiate(prefab: IPrefab): Entity;
         getCommandBuffer(): ECSCommandBuffer;
+        getCommandBufferAfterUpdate(): ECSCommandBuffer;
         get entityManager(): EntityManager;
         /**
          * 所有操作必须一帧内完成，不能有遗留闭包，否则会出现无法彻底覆写世界的问题
@@ -1560,9 +1707,12 @@ declare namespace fsync {
          * 游戏开始时间点
          */
         protected _startTime: TTimeStamp;
-        init(): void;
+        static oidAcc: number;
+        oid: number;
+        init(): this;
         /**
          * 获取当前游戏时间戳
+         * - 和 getGameTime() 的区别在于, getGameTime 的起始时间点为 0, getTime 的起始时间点和游戏开始时的 Date.now() 基本一致
          */
         getTime(): TTimeStamp;
         updateTime(time: TTimeStamp): void;
@@ -1614,6 +1764,7 @@ declare namespace fsync.ecsproxy {
 declare namespace fsync.ecsproxy {
     interface IECSComponentProxy {
         readonly isNull: bool;
+        readonly isNotNull: bool;
         getOrAdd(): this;
         setEntity(key: keyof this, entity: Entity): any;
     }
@@ -1765,6 +1916,7 @@ declare namespace fsync.ecsproxy {
         get entityId(): string;
         set entityId(entityId: string);
         get isNull(): bool;
+        get isNotNull(): bool;
         isSame(t: EntityProxyBase): bool;
         removeSelf(): void;
         Components: (new () => fsync.IComponent)[];
@@ -1820,6 +1972,7 @@ declare namespace fsync.ecsproxy {
         withKey(k: keyof T): this;
         forEach(call: (proxy: T) => void): void;
         toArray(): T[];
+        first(): T;
     }
     class EntityQueryHelper {
         createQuery<T extends EntityProxyBase>(entityManager: EntityManager, cls: new () => T): EntityProxyQuery<T>;
