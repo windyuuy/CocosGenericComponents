@@ -27,7 +27,8 @@ namespace gcc.box2d.tools {
         writeFile(fileName: string, ss: string) {
             if (window["Editor"]) {
                 // console.log("export file:", fileName)
-                Editor.log("export file:", fileName)
+                const path = window['require']('path');
+                Editor.log("export file:", path.normalize(fileName).replace(/\\/mg, "/"))
                 const fs = window['require']('fs');
                 fs.writeFileSync(fileName, ss)
             }
@@ -41,6 +42,7 @@ namespace gcc.box2d.tools {
          * @param throwAnyError 抛出任何异常,并打断当前导出流程
          */
         exportPrefabs(dir: string, outDir: string, call?: (err) => void, throwAnyError: boolean = true) {
+            Editor.warn("export file:", `导出目录 ${dir} 开始。`)
             cc.loader.loadResDir(dir, cc.Prefab, (err, reses: cc.Prefab[]) => {
                 if (!err) {
                     for (let res of reses) {
