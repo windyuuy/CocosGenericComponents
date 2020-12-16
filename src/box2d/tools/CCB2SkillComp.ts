@@ -13,6 +13,10 @@ namespace gcc.box2d.tools {
 	 */
 	@ccclass
 	export class CCB2SkillComp extends cc.Component {
+
+		@property({ displayName: "备注", editorOnly: true, })
+		mynote: string = ""
+
 		toJson(): { oid: string, skillType: string, } {
 			return {
 				oid: this.uuid,
