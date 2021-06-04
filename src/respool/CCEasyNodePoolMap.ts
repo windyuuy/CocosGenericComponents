@@ -10,19 +10,31 @@ namespace gcc.respool {
 		protected prefabMap: { [key: string]: cc.Prefab } = {}
 		protected prefabLoaderMap: { [key: string]: resloader.CCPrefabLoadLisenter } = {}
 
-		registerPrefabUrl(prefabId: string, prefabUrl: string) {
-			this.prefabUrlMap[prefabId] = prefabUrl
+		protected loadAndSavePrefab(prefabId: string, prefabUrl: string, call?: (prefab: cc.Prefab, err?: Error) => void) {
 			if (this.prefabMap[prefabId] == null) {
-				cc.resources.load<cc.Prefab>(prefabId, (err, prefab: cc.Prefab) => {
+				this.loadPrefabRaw(prefabUrl, (prefab, err) => {
 					if (err != null) {
+						if (call != null) {
+							call(prefab, err)
+						}
 						return
 					}
 
-					if (this.prefabMap[prefabId] == null) {
-						this.prefabMap[prefabId] = prefab
+					if (prefab != null) {
+						if (this.prefabMap[prefabId] == null) {
+							this.prefabMap[prefabId] = prefab
+						}
+					}
+					if (call != null) {
+						call(prefab, err)
 					}
 				})
 			}
+		}
+
+		registerPrefabUrl(prefabId: string, prefabUrl: string) {
+			this.prefabUrlMap[prefabId] = prefabUrl
+			this.loadAndSavePrefab(prefabId, prefabUrl)
 		}
 
 		registerPrefab(prefabId: string, prefab: cc.Prefab) {
@@ -31,12 +43,6 @@ namespace gcc.respool {
 
 		registerPrefabLoader(prefabId: string, prefabLoadListener: resloader.CCPrefabLoadLisenter) {
 			this.prefabLoaderMap[prefabId] = prefabLoadListener
-		}
-
-		loadPrefabRaw(prefabUrl: string, call: (prefab: cc.Prefab, err?: Error) => void) {
-			cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
-				call(prefab, err)
-			})
 		}
 
 		loadPrefab(prefabId: string, call: (prefab: cc.Prefab, err?: Error) => void) {
@@ -49,14 +55,23 @@ namespace gcc.respool {
 			let prefabLoader = this.prefabLoaderMap[prefabId]
 			if (prefabLoader != null) {
 				prefabLoader.onLoad((prefab) => {
-					call(prefab, null)
+					if (call != null) {
+						call(prefab, null)
+						call = null
+					}
+				})
+				prefabLoader.onError((err) => {
+					if (call != null) {
+						call(null, err)
+						call = null
+					}
 				})
 				return
 			}
 
 			let prefabUrl = this.prefabUrlMap[prefabId]
 			if (prefabUrl != null) {
-				this.loadPrefabRaw(prefabUrl, call)
+				this.loadAndSavePrefab(prefabId, prefabUrl, call)
 				return
 			}
 
@@ -85,7 +100,17 @@ namespace gcc.respool {
 
 			let prefabUrl = this.prefabUrlMap[prefabId]
 			if (prefabUrl != null) {
-				this.getOrCreateNodeWithPrefabUrl(prefabId, prefabUrl, call)
+				// this.getOrCreateNodeWithPrefabUrl(prefabId, prefabUrl, (node)=>{})
+				this.loadAndSavePrefab(prefabId, prefabUrl, (prefab, err) => {
+					if (err != null) {
+						call(null, err)
+						return
+					}
+
+					let node = this.getOrCreateNodeWithPrefab(prefabId, prefab)
+					call(node)
+					return
+				})
 				return
 			}
 

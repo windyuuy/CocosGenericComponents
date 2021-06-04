@@ -58,6 +58,8 @@ namespace gcc.resloader {
 	export type LoadPrefabFunc = () => ResLoadNotifier<cc.Prefab>
 	export type PrefabSource = string | ResLoadNotifier<cc.Prefab>
 
+	export type CCPrefabLoadLisenter = IResLoadListener<cc.Prefab>
+
 	/**
 	 * 预制体动态加载工具
 	 */
@@ -79,11 +81,11 @@ namespace gcc.resloader {
 			this.loadMap[uri] = notifier
 		}
 
-		loadPrefab(url: string): IResLoadListener<cc.Prefab> {
+		loadPrefab(url: string): CCPrefabLoadLisenter {
 			let existNotifier = this.existNotifier(url)
 			let notifier = this.getNotifier(url)
 			if (!existNotifier) {
-				cc && cc["loader"] && cc["loader"].loadRes(url, cc["Prefab"], (err, asset) => {
+				var onLoaded = (err, asset) => {
 					let isLoaded = (err == null && asset != null)
 					if (isLoaded) {
 						notifier.notifyOnLoad(asset)
@@ -92,7 +94,14 @@ namespace gcc.resloader {
 						console.error(`load res failed, url:${url}, err:`, err)
 						notifier.notifyOnError(err)
 					}
-				})
+				}
+				if (cc && cc["resources"] && cc["resources"].load) {
+					cc && cc["resources"] && cc["resources"].load(url, cc["Prefab"], onLoaded)
+				} else if (cc && cc["loader"] && cc["loader"].loadRes) {
+					cc && cc["loader"] && cc["loader"].loadRes(url, cc["Prefab"], onLoaded)
+				} else {
+					throw new Error("ccloader not implemented")
+				}
 			}
 			return notifier
 		}
@@ -100,7 +109,5 @@ namespace gcc.resloader {
 	}
 
 	export const resLoader = new ResLoader()
-
-	export type CCPrefabLoadLisenter = resloader.IResLoadListener<cc.Prefab>
 
 }

@@ -28,6 +28,7 @@ namespace gcc.respool {
 						this.nodePoolMap.registerPrefabUrl(prefabId, prefabId)
 					}
 					call(node, err)
+					return;
 				})
 			})
 		}

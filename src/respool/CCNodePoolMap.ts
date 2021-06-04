@@ -7,6 +7,25 @@ namespace gcc.respool {
 	 */
 	export class CCNodePoolMap extends ResPoolMap<cc.Node> {
 
+		loadPrefabRaw(prefabUrl: string, call: (prefab: cc.Prefab, err?: Error) => void) {
+			// cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
+			// 	call(prefab, err)
+			// })
+			var loader = resloader.resLoader.loadPrefab(prefabUrl)
+			loader.onLoad((prefab) => {
+				if (call != null) {
+					call(prefab)
+					call = null
+				}
+			})
+			loader.onError((err) => {
+				if (call != null) {
+					call(null, err)
+					call = null
+				}
+			})
+		}
+
 		getOrCreateNodeWithPrefabUrl(prefabId: string, prefabUrl: string, call: (node: cc.Node, err: Error) => void) {
 			let pool = this.getResPool(prefabId)
 			if (pool.length > 0) {
@@ -15,13 +34,15 @@ namespace gcc.respool {
 
 				call(node, null)
 			} else {
-				cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
-					if (err) {
+				this.loadPrefabRaw(prefabUrl, (prefab: cc.Prefab, err?: Error) => {
+					if (err != null) {
 						call(null, err)
+						return;
 					}
 
 					var node = this.getOrCreateNodeWithPrefab(prefabId, prefab)
 					call(node, null)
+					return;
 				})
 			}
 		}
@@ -42,7 +63,7 @@ namespace gcc.respool {
 			return null
 		}
 
-		getOrCreateNodeDynamicly(prefabId: string, prefabLoadListener: resloader.CCPrefabLoadLisenter, call: (node: cc.Node) => void) {
+		getOrCreateNodeDynamicly(prefabId: string, prefabLoadListener: resloader.CCPrefabLoadLisenter, call: (node: cc.Node, err?: Error) => void) {
 			let pool = this.getResPool(prefabId)
 			if (pool.length > 0) {
 				const node = pool.pop()
@@ -51,10 +72,18 @@ namespace gcc.respool {
 				call(node)
 			} else {
 				prefabLoadListener.onLoad((prefab) => {
-					let node = ccNodePreloader.instantiate(prefab)
-					node.emit("ecs:reuse")
+					if (call != null) {
+						let node = ccNodePreloader.instantiate(prefab)
+						node.emit("ecs:reuse")
 
-					call(node)
+						call(node)
+					}
+				})
+				prefabLoadListener.onError((err) => {
+					if (call != null) {
+						call(null, err)
+						call = null
+					}
 				})
 			}
 		}
