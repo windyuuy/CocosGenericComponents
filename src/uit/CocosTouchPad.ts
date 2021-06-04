@@ -1,5 +1,8 @@
 
 namespace gcc.uit {
+
+	import transformTool=transform.transformTool
+
 	/**
 	 * 鼠标滚轮数据
 	 */
@@ -95,7 +98,7 @@ namespace gcc.uit {
 		 * @param touch 
 		 */
 		protected getTouchEventPos(touch: cc.Touch): fsync.Vector3 {
-			let designSize = cc.winSize
+			let designSize = transformTool.getWinSize()
 			let pt = touch.getLocation()
 			let vec = new fsync.Vector3()
 			// 转化屏幕中心点为坐标原点

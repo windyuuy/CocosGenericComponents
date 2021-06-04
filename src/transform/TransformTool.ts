@@ -86,6 +86,42 @@ namespace gcc.transform {
 			}
 		}
 
+		convertToWorldSpaceAR<T extends (cc.Vec2 | cc.Vec3)>(node: cc.Node, pos: T): T {
+			let worldPos: T
+			if (node["convertToWorldSpaceAR"]) {
+				worldPos = node["convertToWorldSpaceAR"](pos)
+			} else {
+				let p: cc.Vec3 = pos as any
+				if (pos instanceof cc.Vec2) {
+					p = new cc.Vec3(pos.x, pos.y, 0)
+				}
+				worldPos = node.getComponent(cc.UITransform).convertToWorldSpaceAR(p)
+			}
+			return worldPos
+		}
+
+		getUITransform(node: cc.Node): cc.UITransform {
+			if (node["convertToWorldSpaceAR"]) {
+				return node as any
+			} else {
+				return node.getComponent(cc.UITransformComponent)
+			}
+		}
+
+		setScale(node: cc.Node, scale: number) {
+			if (typeof (node.scale) == "number") {
+				node.scale = scale
+				//@ts-expect-error
+			} else if (node.scale instanceof cc.Vec3) {
+				//@ts-expect-error
+				node.scale = new cc.Vec3(scale, scale, scale)
+			}
+		}
+
+		getWinSize(): cc.Size {
+			return cc["winSize"]
+		}
+
 	}
 
 	export const transformTool = new TransformTool().init()

@@ -5,24 +5,53 @@ namespace gcc.uit {
     const Vector = fsync.Vector
 
     // @ccclass("CCGamepad")
-    export class CCGamepad extends cc.Component {
+    export class CCGamepad {
 
-        leftStick: CCGameStick
+        @property({ type: CCGameStick, displayName: "左侧摇杆", })
+        public get leftStick(): CCGameStick {
+            return this.data.leftStick;
+        }
+        public set leftStick(value: CCGameStick) {
+            this.data.leftStick = value;
+        }
 
-        rightStick: CCGameStick
+        @property({ type: CCGameStick, displayName: "右侧摇杆", })
+        public get rightStick(): CCGameStick {
+            return this.data.rightStick;
+        }
+        public set rightStick(value: CCGameStick) {
+            this.data.rightStick = value;
+        }
 
-        skillSticks: CCGameStick[]
+        @property({ type: [CCGameStick], displayName: "其他摇杆列表", })
+        get skillSticks(): CCGameStick[] {
+            return this.data.skillSticks
+        }
+
+        @property({ type: Boolean, displayName: "是否显示调试视图", })
+        public get toDrawDebugView(): boolean {
+            return this.data.toDrawDebugView;
+        }
+        public set toDrawDebugView(value: boolean) {
+            this.data.toDrawDebugView = value;
+        }
+
+        protected data: CCGamepad
+        loadFromJson(data: CCGamepad) {
+            this.data = data
+        }
 
         gamepad: kitten.gamepad.NormalGamepad
-
-        @property
-        toDrawDebugView: boolean = false
 
         onLoad() {
             this.gamepad = new kitten.gamepad.NormalGamepad().init()
 
-            this.leftStick.syncViewData(this.gamepad.leftStick)
-            this.rightStick.syncViewData(this.gamepad.rightStick)
+            if (this.leftStick) {
+                this.leftStick.syncViewData(this.gamepad.leftStick)
+            }
+            if (this.rightStick) {
+                this.rightStick.syncViewData(this.gamepad.rightStick)
+            }
             for (let stickView of this.skillSticks) {
                 let stick = new kitten.gamepad.GameStick().init(`skill_${stickView.stickRange.parent.getSiblingIndex()}`, this.gamepad.sharedState)
                 this.gamepad.virutalCtrls.push(stick)
@@ -39,8 +68,20 @@ namespace gcc.uit {
 
         }
 
+        protected getSkillStickViews() {
+            let skillStickViews = []
+            if (this.leftStick) {
+                skillStickViews.push(this.leftStick)
+            }
+            if (this.rightStick) {
+                skillStickViews.push(this.rightStick)
+            }
+            skillStickViews.push(...this.skillSticks)
+            return skillStickViews
+        }
+
         updateViewVisible() {
-            let skillStickViews = [this.leftStick, this.rightStick].concat(this.skillSticks)
+            let skillStickViews = this.getSkillStickViews()
             let sticks = this.gamepad.virutalCtrls
             skillStickViews.forEach((view, index) => {
                 let stick = sticks[index]
@@ -51,15 +92,16 @@ namespace gcc.uit {
         updateView() {
             this.updateViewVisible()
 
-            let skillStickViews = [this.leftStick, this.rightStick].concat(this.skillSticks)
-            this.gamepad.virutalCtrls.forEach((stick, index) => {
-                let stickView = skillStickViews[index]
+            let skillStickViews = this.getSkillStickViews()
+            let sticks = this.gamepad.virutalCtrls
+            skillStickViews.forEach((stickView, index) => {
+                let stick = sticks[index]
                 stickView.stick = stick
                 stickView.updateView()
             })
         }
 
-        protected update(dt: number) {
+        update() {
             this.updateView()
         }
 
