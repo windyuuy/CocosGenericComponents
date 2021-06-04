@@ -46,24 +46,24 @@ declare namespace fsync {
         height: number;
     }
     /**
-     * Rect = 左下角 + size
+     * BLRect = 左下角 + size
      */
-    class Rect {
+    class BLRect {
         x: number;
         y: number;
         width: number;
         height: number;
         constructor(x?: number, y?: number, width?: number, height?: number);
-        static top(self: Rect): Vector2;
-        static bottom(self: Rect): Vector2;
-        static center(self: Rect): Vector2;
-        static fromRectLike({ x, y, width, height }: IBLWHRectSpec): Rect;
-        static copyRectLike(self: Rect, { x, y, width, height }: IBLWHRectSpec): Rect;
-        static reset(self: Rect): Rect;
-        static mergeFrom(self: Rect, rect: Rect): Rect;
-        static clone(self: Rect): Rect;
-        static containPoint(rect: Rect, pt: IVector): bool;
-        static limitPointSelf(rect: Rect, pt: IVector): void;
+        static top(self: BLRect): Vector2;
+        static bottom(self: BLRect): Vector2;
+        static center(self: BLRect): Vector2;
+        static fromRectLike({ x, y, width, height }: IBLWHRectSpec): BLRect;
+        static copyRectLike(self: BLRect, { x, y, width, height }: IBLWHRectSpec): BLRect;
+        static reset(self: BLRect): BLRect;
+        static mergeFrom(self: BLRect, rect: BLRect): BLRect;
+        static clone(self: BLRect): BLRect;
+        static containPoint(rect: BLRect, pt: IVector): bool;
+        static limitPointSelf(rect: BLRect, pt: IVector): void;
     }
 }
 declare namespace fsync {
@@ -2587,8 +2587,8 @@ declare namespace kitten {
 declare namespace kitten.gamepad {
     type Vector3 = fsync.Vector3;
     const Vector3: typeof fsync.Vector3;
-    type Rect = fsync.Rect;
-    const Rect: typeof fsync.Rect;
+    type BLRect = fsync.BLRect;
+    const BLRect: typeof fsync.BLRect;
     /**
      * 环状摇杆
      */
@@ -2660,16 +2660,16 @@ declare namespace kitten.gamepad {
          * @param radius
          */
         getCircleRadius(): number;
-        touchRange: Rect;
+        touchRange: BLRect;
         /**
          * 设置触控范围
          * @param rect
          */
-        setTouchRange(rect: Rect): void;
+        setTouchRange(rect: BLRect): void;
         /**
          * 获取触控范围
          */
-        protected getTouchRange(): Rect;
+        protected getTouchRange(): BLRect;
         /**
          * 处理触控输入
          * @param data

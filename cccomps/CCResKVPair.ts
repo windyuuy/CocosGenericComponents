@@ -5,17 +5,17 @@
 // Learn life-cycle callbacks:
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 
-namespace gcc.box2d.tools {
-	const { ccclass, property, menu } = cc._decorator;
+const { ccclass, property } = cc._decorator;
 
+/**
+ * 资源配置-键值对
+ */
+@ccclass('CCResKVPair')
+export class CCResKVPair {
+    @property({ displayName: "引用资源" })
+    key: string = ""
 
-	/**
-	 * 碰撞组件基类
-	 * - 包括设置分组信息
-	 */
-	export class CCB2CollisionComp extends cc.Component {
-		toJson(): { oid: string, groupIndex: string, categoryBits: string, maskBits: string, } {
-			return null
-		}
-	}
+    @property({ displayName: "资源", type: cc.Prefab })
+    value: cc.Prefab = null;
+
 }

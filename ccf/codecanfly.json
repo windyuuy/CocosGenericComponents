@@ -1,13 +1,17 @@
 {
-	"name": "gcccomps",
-	"version": "0.0.4",
-	"files": [
-		"gcccomps.js",
-		"gcccomps.d.ts",
-		"gcccomps.js.map"
-	],
-	"fileRoot": "../dist/",
-	"tags": [],
-	"commands": [],
-	"uses": []
+    "name": "gcccomps",
+    "version": "0.0.4",
+    "files": [
+        "gcccomps.js",
+        "gcccomps.d.ts",
+        "gcccomps.js.map"
+    ],
+    "fileRoot": ".",
+    "files": [
+        "dist/*",
+        "cccomps/*"
+    ],
+    "tags": [],
+    "commands": [],
+    "uses": []
 }

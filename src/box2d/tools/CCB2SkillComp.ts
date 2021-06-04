@@ -11,7 +11,6 @@ namespace gcc.box2d.tools {
 	/**
 	 * 技能组件基类
 	 */
-	@ccclass
 	export class CCB2SkillComp extends cc.Component {
 
 		@property({ displayName: "备注", editorOnly: true, })
