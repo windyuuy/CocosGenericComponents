@@ -33,6 +33,36 @@ namespace gcc.respool {
 			this.prefabLoaderMap[prefabId] = prefabLoadListener
 		}
 
+		loadPrefabRaw(prefabUrl: string, call: (prefab: cc.Prefab, err?: Error) => void) {
+			cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
+				call(prefab, err)
+			})
+		}
+
+		loadPrefab(prefabId: string, call: (prefab: cc.Prefab, err?: Error) => void) {
+			let prefab = this.prefabMap[prefabId]
+			if (prefab != null) {
+				call(prefab, null)
+				return
+			}
+
+			let prefabLoader = this.prefabLoaderMap[prefabId]
+			if (prefabLoader != null) {
+				prefabLoader.onLoad((prefab) => {
+					call(prefab, null)
+				})
+				return
+			}
+
+			let prefabUrl = this.prefabUrlMap[prefabId]
+			if (prefabUrl != null) {
+				this.loadPrefabRaw(prefabUrl, call)
+				return
+			}
+
+			call(null, new Error("invalid prefabId"))
+		}
+
 		getNode(prefabId: string): cc.Node {
 			let prefab = this.prefabMap[prefabId]
 			let node = this.getOrCreateNodeWithPrefab(prefabId, prefab)
