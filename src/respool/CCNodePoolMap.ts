@@ -8,14 +8,22 @@ namespace gcc.respool {
 	export class CCNodePoolMap extends ResPoolMap<cc.Node> {
 
 		getOrCreateNodeWithPrefabUrl(prefabId: string, prefabUrl: string, call: (node: cc.Node, err: Error) => void) {
-			cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
-				if (err) {
-					call(null, err)
-				}
+			let pool = this.getResPool(prefabId)
+			if (pool.length > 0) {
+				const node = pool.pop()
+				node.emit("ecs:reuse")
 
-				var node = this.getOrCreateNodeWithPrefab(prefabId, prefab)
 				call(node, null)
-			})
+			} else {
+				cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
+					if (err) {
+						call(null, err)
+					}
+
+					var node = this.getOrCreateNodeWithPrefab(prefabId, prefab)
+					call(node, null)
+				})
+			}
 		}
 
 		getOrCreateNodeWithPrefab(prefabId: string, prefab: cc.Prefab) {
