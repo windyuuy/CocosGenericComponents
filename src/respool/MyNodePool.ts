@@ -33,6 +33,18 @@ namespace gcc.respool {
 			})
 		}
 
+		static async loadAsync(prefabId: string) {
+			return new Promise((resolve, reject) => {
+				this.load(prefabId, (node, err) => {
+					if (err) {
+						reject(err)
+					} else {
+						resolve(node)
+					}
+				})
+			})
+		}
+
 		static loadPrefab(prefabId: string, call: (prefab: cc.Prefab, err?: Error) => void) {
 			this.nodePoolMap.loadPrefab(prefabId, (prefab, err) => {
 				if (prefab != null) {
@@ -41,6 +53,18 @@ namespace gcc.respool {
 				}
 
 				this.nodePoolMap.loadPrefab(prefabId, call)
+			})
+		}
+
+		static loadPrefabAsync(prefabId: string) {
+			return new Promise((resolve, reject) => {
+				this.loadPrefab(prefabId, (prefab, err) => {
+					if (err) {
+						reject(err)
+					} else {
+						resolve(prefabId)
+					}
+				})
 			})
 		}
 
