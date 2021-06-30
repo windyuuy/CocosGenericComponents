@@ -1,4 +1,4 @@
 
-namespace gcc.uit {
+namespace gcc {
 	window['gcc'] = gcc
 }

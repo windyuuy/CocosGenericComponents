@@ -1,0 +1,14 @@
+{
+	"extends": "../base",
+	"compilerOptions": {
+		"outFile": "../../dist/gcccomp.prefab.js"
+	},
+	"files": [
+	],
+	"references": [
+		{ "path": "../common" },
+	],
+	"include": [
+		"./**/*.ts"
+	]
+}

@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "module": "none",
+        "target": "es5",
+        "lib": [
+            "es6",
+            "dom",
+            "es2015.promise"
+        ],
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "declaration": true,
+        "experimentalDecorators": true,
+        "composite": true,
+        "skipLibCheck": true
+    },
+    "compileOnSave": true,
+    "typeAcquisition": {}
+}

@@ -1,0 +1,17 @@
+{
+	"extends": "../base",
+	"compilerOptions": {
+		"composite": true,
+		"outFile": "../../dist/gcccomp.box2d.js"
+	},
+	"files": [
+	],
+	"references": [
+		{ "path": "../../../fsync/src/fsync/common" },
+		{ "path": "../../../fsync/src/fsync/amath" },
+		{ "path": "../../../fsync/src/fsync/box2d" },
+	],
+	"include": [
+		"./**/*.ts"
+	]
+}

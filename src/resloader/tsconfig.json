@@ -1,0 +1,14 @@
+{
+	"extends": "../base",
+	"compilerOptions": {
+		"outFile": "../../dist/gcccomp.resloader.js"
+	},
+	"files": [
+	],
+	"references": [
+		{ "path": "../common" },
+	],
+	"include": [
+		"./**/*.ts"
+	]
+}

@@ -53,39 +53,6 @@ namespace gcc.transform {
 			return pos
 		}
 
-		// 缓动跟随旋转
-		swiftlyFollowRotateStep(entityManager: fsync.EntityManager, entity: fsync.Entity, targetRotation: fsync.Vector4, swiftParams: fsync.math.BezierParams2, dt: number) {
-			let rotate = entityManager.getComponent(entity, fsync.Rotation)
-			if (false) {
-				// fsync.Vector.merge(rotate.value, heroRotate)
-			} else {
-				const cameraRotate = rotate.value.clone()
-				let heroRotateEuler = new fsync.Vector3()
-				fsync.Vector.transQuaternionToEuler(heroRotateEuler, targetRotation)
-				let cameraRotateEuler = new fsync.Vector3()
-				fsync.Vector.transQuaternionToEuler(cameraRotateEuler, cameraRotate)
-				let dthEuler = heroRotateEuler.clone()
-				fsync.Vector.subDown(dthEuler, cameraRotateEuler)
-
-				// let dthEulerStep = new fsync.Vector3()
-				let newCameraRotate = cameraRotateEuler.clone()
-
-				for (let i = 0; i < dthEuler.getBinData().length; i++) {
-					let dthEulerN = dthEuler.getBinData()[i]
-					dthEulerN = math.calcMinAngle(dthEulerN)
-					let dthEulerStepN = math.bezier2(swiftParams.C1, swiftParams.C2, swiftParams.C3, Math.abs(dthEulerN) / 180)
-					dthEulerStepN = dthEulerStepN * swiftParams.speed * dt / 1000
-					dthEulerStepN = Math.abs(math.minByAbs(dthEulerStepN, dthEulerN)) * math.getSign(dthEulerN)
-					let newCameraRotateN = newCameraRotate.getBinData()[i]
-					newCameraRotateN += dthEulerStepN
-					newCameraRotateN = math.calcMinAngle(newCameraRotateN)
-					newCameraRotate.getBinData()[i] = newCameraRotateN
-				}
-
-				fsync.Vector.transEulerToQuaternion(rotate.value, newCameraRotate)
-			}
-		}
-
 		convertToWorldSpaceAR<T extends (cc.Vec2 | cc.Vec3)>(node: cc.Node, pos: T): T {
 			let worldPos: T
 			if (node["convertToWorldSpaceAR"]) {
