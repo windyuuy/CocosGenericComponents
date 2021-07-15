@@ -32,7 +32,7 @@ namespace gcc.respool {
 			}
 		}
 
-		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean = true) {
+		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean) {
 			this.prefabUrlMap[prefabId] = prefabUrl
 			if (preload) {
 				this.loadAndSavePrefab(prefabId, prefabUrl)
