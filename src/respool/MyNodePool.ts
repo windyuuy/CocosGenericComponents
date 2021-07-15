@@ -4,12 +4,12 @@ namespace gcc.respool {
 	export class MyNodePool {
 		private static nodePoolMap: gcc.respool.CCEasyNodePoolMap = new gcc.respool.CCEasyNodePoolMap()
 
-		static registerPrefabUrl(prefabId: string, prefabUrl: string) {
-			this.nodePoolMap.registerPrefabUrl(prefabId, prefabUrl)
+		static registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean = true) {
+			this.nodePoolMap.registerPrefabUrl(prefabId, prefabUrl, preload)
 		}
 
-		static put(node: cc.Node) {
-			this.nodePoolMap.putNode(node)
+		static put(node: cc.Node, retain: boolean = false) {
+			this.nodePoolMap.putNode(node, retain)
 		}
 
 		static get(prefabId: string): cc.Node {
@@ -25,7 +25,7 @@ namespace gcc.respool {
 
 				this.nodePoolMap.getOrCreateNodeWithPrefabUrl(prefabId, prefabId, (node, err) => {
 					if (node != null) {
-						this.nodePoolMap.registerPrefabUrl(prefabId, prefabId)
+						this.nodePoolMap.registerPrefabUrl(prefabId, prefabId, true)
 					}
 					call(node, err)
 					return;

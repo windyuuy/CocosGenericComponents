@@ -67,14 +67,19 @@
     "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */
   },
   "references": [
-    {"path": "./src/common"},
-    {"path": "./src/resloader"},
-    {"path": "./src/respool"},
-    {"path": "./src/prefab"},
-    {"path": "./src/uit"},
-    {"path": "./src/box2d"},
+		{ "path": "../fsync/src/fsync/common" },
+		{ "path": "../fsync/src/fsync/amath" },
+		{ "path": "../fsync/src/fsync/box2d" },
+		{ "path": "../fsync/src/kitten" },
+    // {"path": "./src/common"},
+    // {"path": "./src/resloader"},
+    // {"path": "./src/respool"},
+    // {"path": "./src/prefab"},
+    // {"path": "./src/uit"},
+    // {"path": "./src/box2d"},
   ],
   "include": [
+		"./src/**/*.ts"
   ],
   "exclude": [
     "./dist",

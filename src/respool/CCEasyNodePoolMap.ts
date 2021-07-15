@@ -32,9 +32,11 @@ namespace gcc.respool {
 			}
 		}
 
-		registerPrefabUrl(prefabId: string, prefabUrl: string) {
+		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean) {
 			this.prefabUrlMap[prefabId] = prefabUrl
-			this.loadAndSavePrefab(prefabId, prefabUrl)
+			if (preload) {
+				this.loadAndSavePrefab(prefabId, prefabUrl)
+			}
 		}
 
 		registerPrefab(prefabId: string, prefab: cc.Prefab) {
@@ -117,9 +119,9 @@ namespace gcc.respool {
 			call(null, new Error("no res found"))
 		}
 
-		putNode(node: cc.Node, remove: boolean = false) {
+		putNode(node: cc.Node, retain: boolean = false) {
 			let prefabId: string = node[CCNodeSaveKey]
-			if (remove) {
+			if (retain) {
 				this.putNodeToRemove(prefabId, node)
 			} else {
 				this.putNodeToCull(prefabId, node)
