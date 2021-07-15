@@ -6,9 +6,9 @@ namespace gcc.respool {
 	 * cocos节点池
 	 */
 	export class CCEasyNodePoolMap extends CCNodePoolMap {
-		protected prefabUrlMap: { [key: string]: string } = {}
-		protected prefabMap: { [key: string]: cc.Prefab } = {}
-		protected prefabLoaderMap: { [key: string]: resloader.CCPrefabLoadLisenter } = {}
+		protected prefabUrlMap: { [key: string]: string } = EmptyTable()
+		protected prefabMap: { [key: string]: cc.Prefab } = EmptyTable()
+		protected prefabLoaderMap: { [key: string]: resloader.CCPrefabLoadLisenter } = EmptyTable()
 
 		protected loadAndSavePrefab(prefabId: string, prefabUrl: string, call?: (prefab: cc.Prefab, err?: Error) => void) {
 			if (this.prefabMap[prefabId] == null) {

@@ -4,12 +4,12 @@ namespace gcc.respool {
 	}
 
 	export class AssetsManager {
-		protected pool: { [key: string]: object } = {}
+		protected pool: { [key: string]: object } = EmptyTable()
 
 		protected getSubPool(key: string) {
 			let subPool = this.pool[key]
 			if (subPool == null) {
-				subPool = this.pool[key] = {}
+				subPool = this.pool[key] = EmptyTable()
 			}
 			return subPool
 		}

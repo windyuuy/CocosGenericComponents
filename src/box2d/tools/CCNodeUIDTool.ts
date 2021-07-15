@@ -7,10 +7,10 @@
 
 namespace gcc.box2d.tools {
 	export class CCNodeUIDTool {
-		uuidConvMap: { [key: string]: number } = {}
+		uuidConvMap: { [key: string]: number } = fsync.EmptyTable()
 		uuidAcc: number = 1
 		reset() {
-			this.uuidConvMap = {}
+			this.uuidConvMap = fsync.EmptyTable()
 			this.uuidAcc = 1
 		}
 		getUIDNum(uid: string) {

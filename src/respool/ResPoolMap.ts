@@ -1,6 +1,6 @@
 namespace gcc.respool {
 	export class ResMap<T> {
-		resMap: { [key: string]: T } = fsync.EmptyTable()
+		resMap: { [key: string]: T } = EmptyTable()
 		getItem<F extends T = T>(key: string): F {
 			return this.resMap[key] as F
 		}
@@ -10,7 +10,7 @@ namespace gcc.respool {
 		}
 
 		clear() {
-			this.resMap = fsync.EmptyTable()
+			this.resMap = EmptyTable()
 		}
 	}
 
@@ -18,7 +18,7 @@ namespace gcc.respool {
 	 * 资源池
 	 */
 	export class ResPoolMap<T> {
-		protected resPoolMap: { [key: string]: T[] } = fsync.EmptyTable()
+		protected resPoolMap: { [key: string]: T[] } = EmptyTable()
 
 		getResPool(key: string): T[] {
 			let pool = this.resPoolMap[key]
@@ -30,7 +30,7 @@ namespace gcc.respool {
 		}
 
 		clear() {
-			this.resPoolMap = fsync.EmptyTable()
+			this.resPoolMap = EmptyTable()
 		}
 
 		forEachAllRes(call: (node: T, key: string) => void) {

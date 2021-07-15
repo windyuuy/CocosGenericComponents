@@ -101,7 +101,7 @@ namespace gcc.box2d.tools {
          * 检测重名子节点，保证简化版uid一致
          */
         detectDuplicatedChildName(node: cc.Node) {
-            let map: { [key: string]: boolean } = {}
+            let map: { [key: string]: boolean } = fsync.EmptyTable()
             node.children.forEach(child => {
                 if (!map[child.name]) {
                     map[child.name] = true
@@ -284,7 +284,7 @@ namespace gcc.box2d.tools {
             })
         }
 
-        handlers: { [key: string]: Function } = {}
+        handlers: { [key: string]: Function } = fsync.EmptyTable()
         /**
          * 注册box2d组件转换函数
          */

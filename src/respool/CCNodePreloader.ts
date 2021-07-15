@@ -17,7 +17,7 @@ namespace gcc.respool {
 		}
 
 		init() {
-			this._preloadTaskMap = fsync.EmptyTable()
+			this._preloadTaskMap = EmptyTable()
 			return this
 		}
 
@@ -109,7 +109,7 @@ namespace gcc.respool {
 			return this
 		}
 		clearTasks() {
-			this._preloadTaskMap = fsync.EmptyTable()
+			this._preloadTaskMap = EmptyTable()
 			return this
 		}
 

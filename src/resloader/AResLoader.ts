@@ -8,7 +8,7 @@ namespace gcc.resloader {
 	 * 预制体动态加载工具
 	 */
 	export class ResLoader<T> {
-		protected loadMap: { [key: string]: ResLoadNotifier<T> } = {}
+		protected loadMap: { [key: string]: ResLoadNotifier<T> } = EmptyTable()
 		getNotifier(uri: string) {
 			let notifier = this.loadMap[uri]
 			if (notifier == null) {

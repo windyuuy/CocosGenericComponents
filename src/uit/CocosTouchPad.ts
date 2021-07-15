@@ -1,7 +1,7 @@
 
 namespace gcc.uit {
 
-	import transformTool=transform.transformTool
+	import transformTool = transform.transformTool
 
 	/**
 	 * 鼠标滚轮数据
@@ -28,7 +28,7 @@ namespace gcc.uit {
 		init() {
 			this.guesture = new kitten.guesture.GuestureAnalyzer().init()
 			this.scrollData = new ScrollData()
-			this.listenEvents = fsync.EmptyTable()
+			this.listenEvents = EmptyTable()
 
 			this.initEvents()
 
@@ -36,7 +36,7 @@ namespace gcc.uit {
 		}
 
 		protected initEvents() {
-			const touchedPointMap: { [key: string]: boolean } = {}
+			const touchedPointMap: { [key: string]: boolean } = EmptyTable()
 
 			this.listenEvents[cc.Node.EventType.TOUCH_START] = (event: cc.Event.EventTouch) => {
 				// console.log("touchstart", event)
@@ -132,7 +132,7 @@ namespace gcc.uit {
 		 * @param useCapture 将触摸或鼠标事件注册在捕获阶段
 		 */
 		registerTouchPad(touchPad: cc.Node, useCapture: boolean = false) {
-			// const touchedPointMap: { [key: string]: boolean } = {}
+			// const touchedPointMap: { [key: string]: boolean } = EmptyTable()
 
 			// touchPad.on(cc.Node.EventType.TOUCH_START, (event: cc.Event.EventTouch) => {
 			// 	// console.log("touchstart", event)
