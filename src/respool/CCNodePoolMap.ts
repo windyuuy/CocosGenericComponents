@@ -11,7 +11,7 @@ namespace gcc.respool {
 			// cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
 			// 	call(prefab, err)
 			// })
-			var loader = resloader.resLoader.loadPrefab(prefabUrl)
+			var loader = resloader.ccResLoader.loadPrefab(prefabUrl)
 			loader.onLoad((prefab) => {
 				if (call != null) {
 					call(prefab)
