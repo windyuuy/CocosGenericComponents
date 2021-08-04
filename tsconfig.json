@@ -67,6 +67,7 @@
     "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */
   },
   "references": [
+    { "path": "../fsync/src/lang/common" },
 		{ "path": "../fsync/src/fsync/common" },
 		{ "path": "../fsync/src/fsync/amath" },
 		{ "path": "../fsync/src/fsync/box2d" },

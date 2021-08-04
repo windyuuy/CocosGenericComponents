@@ -1,0 +1,18 @@
+{
+	"extends": "../base",
+	"compilerOptions": {
+		"outFile": "../../dist/gcccomp.layer.js"
+	},
+	"files": [
+	],
+	"references": [
+		{ "path": "../../../fsync/src/fsync/common" },
+		{ "path": "../../../fsync/src/lang/common" },
+		{ "path": "../common" },
+		{ "path": "../resloader" },
+		{ "path": "../respool" },
+	],
+	"include": [
+		"./**/*.ts"
+	]
+}

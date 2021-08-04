@@ -1,22 +1,26 @@
 
 namespace gcc.respool {
 
-	export class MyNodePool {
-		private static nodePoolMap: gcc.respool.CCEasyNodePoolMap = new gcc.respool.CCEasyNodePoolMap()
+	export class TMyNodePool {
+		protected nodePoolMap: gcc.respool.CCEasyNodePoolMap = new gcc.respool.CCEasyNodePoolMap()
 
-		static registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean = true) {
+		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean = true) {
 			this.nodePoolMap.registerPrefabUrl(prefabId, prefabUrl, preload)
 		}
 
-		static put(node: cc.Node, retain: boolean = false) {
+		registerPrefab(prefabId: string, prefab: cc.Prefab) {
+			this.nodePoolMap.registerPrefab(prefabId, prefab)
+		}
+
+		put(node: cc.Node, retain: boolean = false) {
 			this.nodePoolMap.putNode(node, retain)
 		}
 
-		static get(prefabId: string): cc.Node {
+		get(prefabId: string): cc.Node {
 			return this.nodePoolMap.getNode(prefabId)
 		}
 
-		static load(prefabId: string, call: (node: cc.Node, err?: Error) => void) {
+		load(prefabId: string, call: (node: cc.Node, err?: Error) => void): void {
 			this.nodePoolMap.loadNode(prefabId, (node, err) => {
 				if (node != null) {
 					call(node, err)
@@ -33,7 +37,7 @@ namespace gcc.respool {
 			})
 		}
 
-		static async loadAsync(prefabId: string) {
+		async loadAsync(prefabId: string): Promise<cc.Node> {
 			return new Promise((resolve, reject) => {
 				this.load(prefabId, (node, err) => {
 					if (err) {
@@ -45,7 +49,7 @@ namespace gcc.respool {
 			})
 		}
 
-		static loadPrefab(prefabId: string, call: (prefab: cc.Prefab, err?: Error) => void) {
+		loadPrefab(prefabId: string, call: (prefab: cc.Prefab, err?: Error) => void) {
 			this.nodePoolMap.loadPrefab(prefabId, (prefab, err) => {
 				if (prefab != null) {
 					call(prefab, err)
@@ -56,7 +60,7 @@ namespace gcc.respool {
 			})
 		}
 
-		static loadPrefabAsync(prefabId: string) {
+		loadPrefabAsync(prefabId: string) {
 			return new Promise((resolve, reject) => {
 				this.loadPrefab(prefabId, (prefab, err) => {
 					if (err) {
@@ -69,4 +73,6 @@ namespace gcc.respool {
 		}
 
 	}
+
+	export const MyNodePool = new TMyNodePool();
 }
