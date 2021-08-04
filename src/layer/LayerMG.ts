@@ -126,6 +126,7 @@ namespace gcc.layer {
 	 * 内部调用的对话框接口
 	 */
 	export interface IDialogInnerCall {
+		playCloseAnimation(finished: () => void)
 		onExposed();
 		onShield();
 		node: cc.Node;
@@ -291,144 +292,21 @@ namespace gcc.layer {
 		}
 	}
 
-	/**
-	 * 对话框基类
-	 */
-	@ccclass("DialogComponent")
-	export class Dialog extends cc.Component {
-
-		dialogModel: DialogModel = new DialogModel()
-		get rawData() {
-			return this.dialogModel.data
-		}
-
-		@property({
-			displayName: "遮罩",
-			tooltip: "可空, 使用默认值",
-		})
-		modelLayer: cc.Node = null
-
-		/**
-		 * 初次创建调用
-		 */
-		protected onCreate(data?: Object) {
-			this.onInit(data)
-		}
-
-		protected onInit(data?: Object) {
-
-		}
-
-		/**
-		 * 获取当前默认的layer管理器
-		 */
-		protected get layerMG() {
-			return LayerMG;
-		}
-
-		/**
-		 * 播放关闭动画
-		 */
-		playCloseAnimation(finished: () => void) {
-			setTimeout(finished);
-		}
-
-		/**
-		 * 图层暴露
-		 */
-		protected onExposed() {
-
-		}
-
-		/**
-		 * 图层被遮挡屏蔽
-		 */
-		protected onShield() {
-
-		}
-
-		/**
-		 * 显示对话框
-		 */
-		show() {
-			this.layerMG.showDialog(new ShowDialogParam(this.dialogModel.uri))
-		}
-		/**
-		 * 每次由隐藏变为显示调用
-		 */
-		protected onShow() {
-
-		}
-
-		/**
-		 * 隐藏对话框
-		 */
-		hide() {
-
-		}
-		/**
-		 * 每次由显示变为隐藏调用
-		 */
-		protected onHide() {
-
-		}
-
-		/**
-		 * 关闭对话框
-		 */
-		close() {
-
-		}
-		/**
-		 * 关闭调用
-		 */
-		protected onClose() {
-
-		}
-
-		/**
-		 * 顶级图层改变时调用
-		 */
-		protected onCoverChanged?()
-
-		/**
-		 * 焦点改变时调用
-		 */
-		protected onFocusChanged?()
+	export interface IUILoading {
 
 	}
 
-	@ccclass('LayerMGComp')
-	export class LayerMGComp extends cc.Component {
-		@property(cc.Node)
-		public layerRoot: cc.Node = null!
-		@property(cc.Prefab)
-		public modalPrefab: cc.Prefab = null!
-		@property(cc.Prefab)
-		public toastPrefab: cc.Prefab = null!
-		@property(UILoading)
-		public loadingView: UILoading = null!
-		@property(cc.Camera)
-		public uiCamera: cc.Camera = null!
-
-		public toastPrefabUrl: string = "gcc.layer:toast"
-
-		public static inst: LayerMGComp
-
-		public onLayerChange: (() => void)[] = []
-
-		public onLoad() {
-			LayerMGComp.inst = this;
-			respool.MyNodePool.registerPrefab(this.toastPrefabUrl, this.toastPrefab)
-			this.loadingView.node.active = false;
-			cc.game.addPersistRootNode(this.node)
-		}
-
+	export interface ILayerMGComp {
+		layerRoot: cc.Node
+		modalPrefab: cc.Prefab
+		toastPrefab: cc.Prefab
+		loadingView: IUILoading
+		uiCamera: cc.Camera
 	}
 
 	export class TLayerMG {
 
-		protected sharedLayerMGComp!: LayerMGComp
+		protected sharedLayerMGComp!: ILayerMGComp
 
 		/**
 		 * 加载核心图层配置
@@ -436,14 +314,14 @@ namespace gcc.layer {
 		 */
 		public loadMGConfig() {
 			return respool.MyNodePool.loadAsync("Prefabs/UI/UICore").then((node) => {
-				this.sharedLayerMGComp = node.getComponent(LayerMGComp)
+				this.sharedLayerMGComp = node.getComponent("LayerMGComp") as ILayerMGComp
 			})
 		}
 		/**
 		 * 获取核心图层配置
 		 * @returns
 		 */
-		protected get MGConfig(): LayerMGComp {
+		protected get MGConfig(): ILayerMGComp {
 			return this.sharedLayerMGComp
 		}
 
@@ -457,9 +335,9 @@ namespace gcc.layer {
 					if (err) {
 						reject(err);
 					} else {
-						let dialog = dialogNode.getComponent(Dialog)
+						let dialog = dialogNode.getComponent("DialogComponent") as IDialogInnerCall
 						if (dialog == null) {
-							dialog = dialogNode.addComponent(Dialog);
+							dialog = dialogNode.addComponent("DialogComponent") as IDialogInnerCall
 						}
 
 						{
@@ -539,8 +417,8 @@ namespace gcc.layer {
 			})
 		}
 
-		public getDialogForLayer(layer: cc.Node): Dialog | null {
-			return layer.getComponent(Dialog)
+		public getDialogForLayer(layer: cc.Node): IDialogInnerCall | null {
+			return layer.getComponent("DialogComponent") as IDialogInnerCall
 		}
 
 		private refreshing: boolean = false;
@@ -621,7 +499,7 @@ namespace gcc.layer {
 			if (!layerData.node) {
 				this.doClose(layerData)
 			} else {
-				let layerComp = layerData.node.getComponent(Dialog)
+				let layerComp = layerData.node.getComponent("DialogComponent") as IDialogInnerCall
 				if (layerComp) {
 					layerComp["onClose"] && layerComp["onClose"]()
 					if (instant) {

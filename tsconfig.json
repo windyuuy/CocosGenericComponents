@@ -19,7 +19,8 @@
     // "outFile": "D:/DATA/Projects/pockme/assets/scripts/deps/5.gcccomps.js", /* Concatenate and emit output to single file. */
     // "outFile": "E:/Libs/dogs/assets/scripts/deps/gcccomps.js", /* Concatenate and emit output to single file. */
     // "outFile": "D:/DATA/Projects/ECSWithBox2DGame/src/deps/gcccomps.js",                       /* Concatenate and emit output to single file. */
-    "outFile": "./dist/gcccomps.js",                       /* Concatenate and emit output to single file. */
+    // "outFile": "./dist/gcccomps.js",                       /* Concatenate and emit output to single file. */
+    "outFile": "E:/DATA/Projects/netease/youdao-game-client/client/assets/script/deps/gcccomps.js",                       /* Concatenate and emit output to single file. */
     // "outDir": "./",                        /* Redirect output structure to the directory. */
     // "rootDir": "./",                       /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     "composite": true,                     /* Enable project compilation */
