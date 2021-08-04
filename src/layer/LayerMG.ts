@@ -35,9 +35,11 @@ namespace gcc.layer {
 		 */
 		updateTargetTags(target: TagTarget, tags: string[]) {
 			let record = this.getRecord(target);
-			record.tagsSet.clear();
-			for (let tag of tags) {
-				record.tagsSet.add(tag)
+			if (record != null) {
+				record.tagsSet.clear();
+				for (let tag of tags) {
+					record.tagsSet.add(tag)
+				}
 			}
 		}
 
@@ -126,6 +128,7 @@ namespace gcc.layer {
 	 * 内部调用的对话框接口
 	 */
 	export interface IDialogInnerCall {
+		onEnter(): void;
 		playCloseAnimation(finished: () => void)
 		onExposed();
 		onShield();
@@ -215,7 +218,11 @@ namespace gcc.layer {
 			return this._tags
 		}
 		public set tags(value: string[]) {
-			this._tags = value
+			if (value != null) {
+				value.copyTo(this._tags)
+			} else {
+				this._tags.clear()
+			}
 			this.tagFilter.updateTargetTags(this, value)
 		}
 
@@ -249,10 +256,9 @@ namespace gcc.layer {
 		 */
 		public isCover: boolean = false
 
-		public constructor(url?: string, data?: object, tags?: string[]) {
+		public constructor(url?: string, data?: object) {
 			this.uri = url
 			this.data = data
-			this.tags = tags
 			this.isCancelShowing = false;
 			this.isShow = true
 		}
@@ -262,17 +268,25 @@ namespace gcc.layer {
 		protected _url?: string;
 		protected _data?: object;
 		protected _order?: number;
+		protected _tags: string[];
+		public get tags(): string[] {
+			return this._tags;
+		}
+		public set tags(value: string[]) {
+			this._tags = value;
+		}
 
-		constructor(url: string, data?: object) {
+		constructor(url: string, data?: object, tags?: string[]) {
 			this.uri = url
 			this.data = data
+			this.tags = tags
 		}
 
 		public get uri(): string {
 			return this._url ?? "";
 		}
 		public set uri(v: string) {
-			this._url = "Prefabs/UI/" + v
+			this._url = "prefabs/ui/" + v
 		}
 
 		public get data(): object | undefined {
@@ -305,6 +319,15 @@ namespace gcc.layer {
 	}
 
 	export class TLayerMG {
+		protected dialogClassMap: { [key: string]: new () => cc.Component } = EmptyTable()
+		registerDialogClass(key: string, cls: new () => cc.Component) {
+			this.dialogClassMap[key] = cls
+		}
+		getDialogClass(key: string): new () => cc.Component {
+			return this.dialogClassMap[key]
+		}
+
+		protected tagFilter: TagFilter = new TagFilter()
 
 		protected sharedLayerMGComp!: ILayerMGComp
 
@@ -313,15 +336,16 @@ namespace gcc.layer {
 		 * @returns 
 		 */
 		public loadMGConfig() {
-			return respool.MyNodePool.loadAsync("Prefabs/UI/UICore").then((node) => {
+			return respool.MyNodePool.loadAsync("prefabs/ui/UICore").then((node) => {
 				this.sharedLayerMGComp = node.getComponent("LayerMGComp") as ILayerMGComp
+				node.setParent(cc.director.getScene())
 			})
 		}
 		/**
 		 * 获取核心图层配置
 		 * @returns
 		 */
-		protected get MGConfig(): ILayerMGComp {
+		get MGConfig(): ILayerMGComp {
 			return this.sharedLayerMGComp
 		}
 
@@ -335,15 +359,17 @@ namespace gcc.layer {
 					if (err) {
 						reject(err);
 					} else {
-						let dialog = dialogNode.getComponent("DialogComponent") as IDialogInnerCall
+						let dialog = dialogNode.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
 						if (dialog == null) {
-							dialog = dialogNode.addComponent("DialogComponent") as IDialogInnerCall
+							dialog = dialogNode.addComponent(this.getDialogClass("CCDialogComp")) as any as IDialogInnerCall
 						}
 
 						{
 							const dialogModel = dialog.dialogModel
 							dialogModel.comp = dialog as any as IDialogInnerCall
 							dialogModel.node = dialogNode
+							dialogModel.tagFilter = this.tagFilter
+							dialogModel.tags = p.tags
 
 							// 记录到层列表
 							this._dialogList.push(dialogModel)
@@ -418,7 +444,7 @@ namespace gcc.layer {
 		}
 
 		public getDialogForLayer(layer: cc.Node): IDialogInnerCall | null {
-			return layer.getComponent("DialogComponent") as IDialogInnerCall
+			return layer.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
 		}
 
 		private refreshing: boolean = false;
@@ -427,7 +453,7 @@ namespace gcc.layer {
 			this.refreshing = true;
 
 			let block = false
-			let tInit = []
+			let tInit: DialogModel[] = []
 			let tPause: DialogModel[] = []
 			let tResume: DialogModel[] = []
 			for (let i = this.MGConfig.layerRoot.children.length - 1; i >= 0; i--) {
@@ -452,7 +478,7 @@ namespace gcc.layer {
 				}
 			}
 
-			tInit.forEach(v => v.onEnter())
+			tInit.forEach(v => v.comp.onEnter())
 
 			tPause.forEach(v => {
 				v.comp.onShield()
@@ -485,6 +511,9 @@ namespace gcc.layer {
 		showDialog(p: ShowDialogParam) {
 			return this.getOrCreateDialog(p).then((dialogModel) => {
 				dialogModel.node.active = true
+				if (dialogModel.node.parent == null) {
+					dialogModel.node.parent = this.MGConfig.layerRoot
+				}
 				this.postLayerChange(dialogModel.node)
 			})
 		}
@@ -499,7 +528,7 @@ namespace gcc.layer {
 			if (!layerData.node) {
 				this.doClose(layerData)
 			} else {
-				let layerComp = layerData.node.getComponent("DialogComponent") as IDialogInnerCall
+				let layerComp = layerData.node.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
 				if (layerComp) {
 					layerComp["onClose"] && layerComp["onClose"]()
 					if (instant) {

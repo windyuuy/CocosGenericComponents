@@ -2,8 +2,8 @@
 /**
  * 对话框基类
  */
-@ccclass("DialogComponent")
-export class DialogComponent extends cc.Component {
+@ccclass("CCDialogComp")
+export class CCDialogComp extends cc.Component {
 
 	dialogModel: DialogModel = new DialogModel()
 	get rawData() {
