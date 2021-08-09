@@ -1,8 +1,6 @@
 
 namespace gcc.layer {
 
-	const { ccclass, property } = cc._decorator;
-
 	export type TagTarget = Object
 
 	/**
@@ -11,63 +9,6 @@ namespace gcc.layer {
 	export class TagRecord {
 		target: TagTarget
 		tagsSet: Set<string> = new Set<string>()
-	}
-
-	/**
-	 * tag管理类
-	 */
-	export class TagFilter {
-
-		/**
-		 * 记录项列表
-		 */
-		protected records: TagRecord[] = []
-
-		protected getRecord(target: TagTarget) {
-			let record = this.records.find(r => r.target == target);
-			return record;
-		}
-
-		/**
-		 * 更新对象的tag设置
-		 * @param target 
-		 * @param tags 
-		 */
-		updateTargetTags(target: TagTarget, tags: string[]) {
-			let record = this.getRecord(target);
-			if (record != null) {
-				record.tagsSet.clear();
-				for (let tag of tags) {
-					record.tagsSet.add(tag)
-				}
-			}
-		}
-
-		/**
-		 * 移除记录的对象
-		 * @param target 
-		 */
-		removeTarget(target: TagTarget) {
-			let record = this.getRecord(target);
-			this.records.remove(record)
-		}
-
-		/**
-		 * 通过tag筛选所有对象
-		 * @param tags 
-		 */
-		filterTargetsByTags<T extends Object>(tags: string[]): TagTarget[] {
-			let result = this.records.filter(r => {
-				let matched = true
-				for (let tag of tags) {
-					if (!r.tagsSet.has(tag)) {
-						matched = false
-					}
-				}
-				return matched
-			}).map(r => r.target)
-			return result
-		}
 	}
 
 	export interface ILoadingDelegate {
@@ -106,11 +47,15 @@ namespace gcc.layer {
 	 * 基于tag的图层顺序管理
 	 */
 	export class LayerOrderMG {
+		protected tagsOrderMap: { [key: string]: number } = EmptyTable()
+
 		/**
 		 * 设置tag初始依赖顺序
 		 */
 		setupTagsDepends(tags: string[]) {
-
+			tags.forEach((tag, index) => {
+				this.tagsOrderMap[tag] = index
+			})
 		}
 
 		/**
@@ -120,6 +65,10 @@ namespace gcc.layer {
 		 */
 		setTagDepends(tags: string[], dependTags: string[]) {
 
+		}
+
+		getOrder(tag: string): number {
+			return this.tagsOrderMap[tag]
 		}
 
 	}
@@ -249,7 +198,7 @@ namespace gcc.layer {
 		/**
 		 * 显示当前对话框
 		 */
-		public isShow: boolean
+		public isShowing: boolean
 
 		/**
 		 * 是否封面
@@ -260,7 +209,13 @@ namespace gcc.layer {
 			this.uri = url
 			this.data = data
 			this.isCancelShowing = false;
-			this.isShow = true
+			this.isShowing = false
+		}
+	}
+
+	export class LayerUriUtil {
+		static wrapUri(uri: string) {
+			return "prefabs/ui/" + uri
 		}
 	}
 
@@ -286,7 +241,7 @@ namespace gcc.layer {
 			return this._url ?? "";
 		}
 		public set uri(v: string) {
-			this._url = "prefabs/ui/" + v
+			this._url = LayerUriUtil.wrapUri(v)
 		}
 
 		public get data(): object | undefined {
@@ -330,15 +285,31 @@ namespace gcc.layer {
 		protected tagFilter: TagFilter = new TagFilter()
 
 		protected sharedLayerMGComp!: ILayerMGComp
+		get layerRoot() {
+			return this.sharedLayerMGComp.layerRoot
+		}
+		get layerComp(): cc.Component {
+			return this.sharedLayerMGComp as any as cc.Component
+		}
 
 		/**
 		 * 加载核心图层配置
 		 * @returns 
 		 */
-		public loadMGConfig() {
-			return respool.MyNodePool.loadAsync("prefabs/ui/UICore").then((node) => {
+		public loadMGConfig(prefab?: cc.Node | cc.Prefab) {
+			const handleConfigSource = (node: cc.Node) => {
 				this.sharedLayerMGComp = node.getComponent("LayerMGComp") as ILayerMGComp
 				node.setParent(cc.director.getScene())
+			}
+			if (prefab) {
+				return new Promise((resolve, reject) => {
+					let node = cc.instantiate(prefab) as cc.Node
+					handleConfigSource(node)
+					resolve(node)
+				})
+			}
+			return respool.MyNodePool.loadAsync("prefabs/uibase/UICore").then((node) => {
+				handleConfigSource(node)
 			})
 		}
 		/**
@@ -347,6 +318,23 @@ namespace gcc.layer {
 		 */
 		get MGConfig(): ILayerMGComp {
 			return this.sharedLayerMGComp
+		}
+
+		preloadDialog(p: ShowDialogParam): Promise<DialogModel> {
+			return new Promise((resolve, reject) => {
+				this.createDialog(p).then((dialogModel) => {
+					// const node = dialogModel.node
+					// if (!node.active) {
+					// 	node.active = true
+					// }
+					// if (node.parent == null) {
+					// 	node.parent = this.MGConfig.layerRoot
+					// }
+					resolve(dialogModel)
+				}, (reason) => {
+					reject(reason)
+				})
+			})
 		}
 
 		createDialog(p: ShowDialogParam): Promise<DialogModel> {
@@ -369,7 +357,13 @@ namespace gcc.layer {
 							dialogModel.comp = dialog as any as IDialogInnerCall
 							dialogModel.node = dialogNode
 							dialogModel.tagFilter = this.tagFilter
-							dialogModel.tags = p.tags
+							{
+								if (p.tags != null) {
+									dialogModel.tags = p.tags
+								}
+								dialogModel.uri = p.uri
+								dialogModel.data = p.data
+							}
 
 							// 记录到层列表
 							this._dialogList.push(dialogModel)
@@ -385,13 +379,17 @@ namespace gcc.layer {
 			})
 		}
 
-		findDialog(uri: string) {
+		protected _findDialog(uri: string) {
 			return this._dialogList.find(d => d.uri == uri);
+		}
+
+		findDialog(uri: string) {
+			return this._findDialog(uri);
 		}
 
 		getOrCreateDialog(p: ShowDialogParam): Promise<DialogModel> {
 			return new Promise((resolve, reject) => {
-				let dialogModel = this.findDialog(p.uri);
+				let dialogModel = this._findDialog(p.uri);
 				if (dialogModel != null) {
 					resolve(dialogModel)
 				} else {
@@ -473,7 +471,9 @@ namespace gcc.layer {
 							tResume.push(dialog)
 						}
 
-						block = dialog.isCover
+						if (dialog.isShowing) {
+							block = dialog.isCover
+						}
 					}
 				}
 			}
@@ -481,12 +481,16 @@ namespace gcc.layer {
 			tInit.forEach(v => v.comp.onEnter())
 
 			tPause.forEach(v => {
-				v.comp.onShield()
 				v.state = DialogState.Shield
 			})
 			tResume.forEach(v => {
-				v.comp.onExposed()
 				v.state = DialogState.Exposed
+			})
+			tPause.forEach(v => {
+				v.comp.onShield()
+			})
+			tResume.forEach(v => {
+				v.comp.onExposed()
 			})
 
 			this.refreshing = false;
@@ -509,37 +513,81 @@ namespace gcc.layer {
 		protected _dialogList: Array<DialogModel> = new Array()
 
 		showDialog(p: ShowDialogParam) {
-			return this.getOrCreateDialog(p).then((dialogModel) => {
-				dialogModel.node.active = true
-				if (dialogModel.node.parent == null) {
-					dialogModel.node.parent = this.MGConfig.layerRoot
-				}
-				this.postLayerChange(dialogModel.node)
+			return new Promise<DialogModel>((resolve, reject) => {
+				this.getOrCreateDialog(p).then((dialogModel) => {
+					const node = dialogModel.node
+					if (!node.active) {
+						node.active = true
+					}
+					if (node.parent == null) {
+						node.parent = this.MGConfig.layerRoot
+					}
+					if (!dialogModel.isShowing) {
+						dialogModel.isShowing = true
+						dialogModel.comp.onShow && dialogModel.comp.onShow()
+					}
+					this.postLayerChange(dialogModel.node)
+					resolve(dialogModel)
+				}).catch((reason) => {
+					reject(reason)
+				})
 			})
 		}
 
-		closeDialog(uri: string, instant: boolean = true) {
-			let layerData = this.findDialog(uri)
-			if (!layerData) {
+		hideDialog(uri: string | DialogModel) {
+			return this.closeDialog(uri)
+		}
+
+		closeDialog(uri: string | DialogModel, instant: boolean = true) {
+			let layerModel: DialogModel
+			if (typeof (uri) == "string") {
+				layerModel = this._findDialog(uri)
+			} else {
+				layerModel = uri
+			}
+			if (!layerModel) {
 				console.warn("no layer", uri)
 				return
 			}
 
-			if (!layerData.node) {
-				this.doClose(layerData)
+			layerModel.isShowing = false
+			if (!layerModel.node) {
+				this.doClose(layerModel)
 			} else {
-				let layerComp = layerData.node.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
+				let layerComp = layerModel.node.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
 				if (layerComp) {
 					layerComp["onClose"] && layerComp["onClose"]()
 					if (instant) {
-						this.doClose(layerData, layerData.destroyOnClose)
+						this.doClose(layerModel, layerModel.destroyOnClose)
+						layerComp["onHide"] && layerComp["onHide"]()
 					} else {
-						layerComp.playCloseAnimation(() => this.doClose(layerData, layerData.destroyOnClose))
+						layerComp.playCloseAnimation(() => {
+							this.doClose(layerModel, layerModel.destroyOnClose)
+							layerComp["onHide"] && layerComp["onHide"]()
+						})
 					}
 				} else {
-					this.doClose(layerData)
+					this.doClose(layerModel)
 				}
 			}
+		}
+
+		/**
+		 * 关闭所有对话框
+		 */
+		closeAllDialogs() {
+			this._dialogList.concat().forEach(d => this.closeDialog(d));
+		}
+
+		destoryDialog(uri: string) {
+			let layerModel = this._findDialog(uri)
+			if (!layerModel) {
+				console.warn("no layer", uri)
+				return
+			}
+
+			layerModel.destroyOnClose = true
+			this.destoryDialog(uri)
 		}
 
 		private doClose(v: DialogModel, destroy: boolean = false) {
