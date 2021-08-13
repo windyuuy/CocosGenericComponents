@@ -601,7 +601,7 @@ namespace gcc.layer {
 						}
 
 						if (node.parent == parent) {
-							if (node.getSiblingIndex() < idx) { idx = idx - 1 }
+							if (node.getSiblingIndex() <= idx) { idx = idx - 1 }
 						} else {
 							node.parent = parent
 						}
