@@ -29,13 +29,19 @@ namespace gcc.respool {
 						call(prefab, err)
 					}
 				})
+			} else {
+				if (call != null) {
+					call(this.prefabMap[prefabId], null)
+				}
 			}
 		}
 
-		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean) {
+		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean, call?: (prefab: cc.Prefab, err?: Error) => void) {
 			this.prefabUrlMap[prefabId] = prefabUrl
 			if (preload) {
-				this.loadAndSavePrefab(prefabId, prefabUrl)
+				this.loadAndSavePrefab(prefabId, prefabUrl, call)
+			} else {
+				call && call(null, null)
 			}
 		}
 

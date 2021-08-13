@@ -1,4 +1,4 @@
 
 namespace gcc {
-	window['gcc'] = gcc
+	window["gcc"] = gcc
 }

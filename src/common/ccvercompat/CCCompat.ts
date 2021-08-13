@@ -42,7 +42,6 @@ const {
 	Toggle,
 	ToggleContainer,
 	UIMeshRenderer,
-	Widget,
 	LabelOutline,
 	Graphics,
 	PageView,
@@ -137,8 +136,6 @@ cc.Toggle = Toggle
 cc.ToggleContainer = ToggleContainer
 //@ts-expect-error
 cc.UIMeshRenderer = UIMeshRenderer
-//@ts-expect-error
-cc.Widget = Widget
 //@ts-expect-error
 cc.LabelOutline = LabelOutline
 //@ts-expect-error

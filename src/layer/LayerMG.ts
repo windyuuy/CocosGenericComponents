@@ -67,8 +67,18 @@ namespace gcc.layer {
 
 		}
 
-		getOrder(tag: string): number {
-			return this.tagsOrderMap[tag]
+		/**
+		 * 获取图层顺序
+		 * @param tags 
+		 * @returns 
+		 */
+		getOrder(tags: string[]): number {
+			let tag = tags[0]
+			if (tag) {
+				return this.tagsOrderMap[tag]
+			} else {
+				return 0
+			}
 		}
 
 	}
@@ -158,6 +168,10 @@ namespace gcc.layer {
 		 * 分配的tag过滤器
 		 */
 		tagFilter: TagFilter
+		/**
+		 * 图层管理
+		 */
+		layerOrderMG: LayerOrderMG
 
 		protected _tags: string[] = []
 		/**
@@ -179,13 +193,19 @@ namespace gcc.layer {
 		 * 获取层级
 		 */
 		getOrder(): number {
-			return -1;
+			// return -1;
+			let order = this.layerOrderMG.getOrder(this.tags)
+			return order
 		}
 
 		/**
-		 * 图层url
+		 * 模型ID
 		 */
 		public uri: string
+		/**
+		 * 资源uri
+		 */
+		public resUri: string
 		/**
 		 * 图层数据
 		 */
@@ -205,8 +225,8 @@ namespace gcc.layer {
 		 */
 		public isCover: boolean = false
 
-		public constructor(url?: string, data?: object) {
-			this.uri = url
+		public constructor(uri?: string, data?: object) {
+			this.uri = uri
 			this.data = data
 			this.isCancelShowing = false;
 			this.isShowing = false
@@ -220,10 +240,11 @@ namespace gcc.layer {
 	}
 
 	export class ShowDialogParam {
-		protected _url?: string;
+		protected _uri?: string;
 		protected _data?: object;
 		protected _order?: number;
 		protected _tags: string[];
+		protected _resUri?: string
 		public get tags(): string[] {
 			return this._tags;
 		}
@@ -231,17 +252,25 @@ namespace gcc.layer {
 			this._tags = value;
 		}
 
-		constructor(url: string, data?: object, tags?: string[]) {
-			this.uri = url
+		constructor(uri: string, data?: object, resUri?: string, tags?: string[]) {
+			this.uri = uri
 			this.data = data
 			this.tags = tags
+			this.resUri = resUri ?? uri
 		}
 
 		public get uri(): string {
-			return this._url ?? "";
+			return this._uri ?? "";
 		}
 		public set uri(v: string) {
-			this._url = LayerUriUtil.wrapUri(v)
+			this._uri = v
+		}
+
+		public get resUri(): string {
+			return this._resUri
+		}
+		public set resUri(value: string) {
+			this._resUri = LayerUriUtil.wrapUri(value)
 		}
 
 		public get data(): object | undefined {
@@ -251,6 +280,11 @@ namespace gcc.layer {
 		public set data(v: object | undefined) {
 			this._data = v;
 		}
+
+		/**
+		 * 如果dat为空, 则复用之前的模型数据
+		 */
+		reuseData: boolean = true
 
 		public get order(): number {
 			return this._order ?? 0;
@@ -278,11 +312,13 @@ namespace gcc.layer {
 		registerDialogClass(key: string, cls: new () => cc.Component) {
 			this.dialogClassMap[key] = cls
 		}
-		getDialogClass(key: string): new () => cc.Component {
-			return this.dialogClassMap[key]
+		getDialogClass(key: string): string {
+			// return this.dialogClassMap[key]
+			return key
 		}
 
 		protected tagFilter: TagFilter = new TagFilter()
+		layerOrderMG: LayerOrderMG = new LayerOrderMG()
 
 		protected sharedLayerMGComp!: ILayerMGComp
 		get layerRoot() {
@@ -340,8 +376,8 @@ namespace gcc.layer {
 		createDialog(p: ShowDialogParam): Promise<DialogModel> {
 			return new Promise((resolve, reject) => {
 				this.showLoading()
-				let uri = p.uri
-				respool.MyNodePool.load(uri, (dialogNode, err) => {
+				let resUri = p.resUri
+				respool.MyNodePool.load(resUri, (dialogNode, err) => {
 					this.closeLoading()
 
 					if (err) {
@@ -357,16 +393,18 @@ namespace gcc.layer {
 							dialogModel.comp = dialog as any as IDialogInnerCall
 							dialogModel.node = dialogNode
 							dialogModel.tagFilter = this.tagFilter
+							dialogModel.layerOrderMG = this.layerOrderMG
 							{
 								if (p.tags != null) {
 									dialogModel.tags = p.tags
 								}
 								dialogModel.uri = p.uri
+								dialogModel.resUri = p.resUri
 								dialogModel.data = p.data
 							}
 
 							// 记录到层列表
-							this._dialogList.push(dialogModel)
+							this._layerList.push(dialogModel)
 
 							dialog["onCreate"](dialogModel.data)
 							dialogModel.state = DialogState.Inited
@@ -380,7 +418,7 @@ namespace gcc.layer {
 		}
 
 		protected _findDialog(uri: string) {
-			return this._dialogList.find(d => d.uri == uri);
+			return this._layerList.find(d => d.uri == uri);
 		}
 
 		findDialog(uri: string) {
@@ -391,6 +429,12 @@ namespace gcc.layer {
 			return new Promise((resolve, reject) => {
 				let dialogModel = this._findDialog(p.uri);
 				if (dialogModel != null) {
+					if ((!p.reuseData) || p.data !== undefined) {
+						dialogModel.data = p.data
+					}
+					if (p.tags != null) {
+						dialogModel.tags = p.tags
+					}
 					resolve(dialogModel)
 				} else {
 					this.createDialog(p).then((dialogModel) => {
@@ -498,7 +542,7 @@ namespace gcc.layer {
 
 		private postLayerChange(dialogNode: cc.Node) {
 			this.refreshDialogState();
-			this._dialogList.forEach(layer => {
+			this._layerList.forEach(layer => {
 				const comp = layer.comp
 				if (comp.onFocusChanged) {
 					let focus = dialogNode == comp.node
@@ -510,18 +554,60 @@ namespace gcc.layer {
 		/**
 		 * 记录的layer列表
 		 */
-		protected _dialogList: Array<DialogModel> = new Array()
+		protected _layerList: Array<DialogModel> = new Array()
 
-		showDialog(p: ShowDialogParam) {
+		showDialog(p0: string | ShowDialogParam) {
+			let p: ShowDialogParam
+			if (typeof (p0) == "string") {
+				p = new ShowDialogParam(p0)
+			} else {
+				p = p0
+			}
+
 			return new Promise<DialogModel>((resolve, reject) => {
 				this.getOrCreateDialog(p).then((dialogModel) => {
 					const node = dialogModel.node
+
 					if (!node.active) {
 						node.active = true
 					}
-					if (node.parent == null) {
-						node.parent = this.MGConfig.layerRoot
+					// 更新图层顺序
+					{
+						let parent = this.MGConfig.layerRoot
+						let order = dialogModel.getOrder()
+						let idx = -1
+						// for (let i = parent.children.length - 1; i >= 0; i--) {
+						// 	let v = parent.children[i]
+						// 	if (v.active) {
+						// 		let data = this._layerList.find(a => a.node == v)
+						// 		let vOrder = data ? data.getOrder() : 0
+						// 		if (vOrder <= order) {
+						// 			idx = i
+						// 			break
+						// 		}
+						// 	}
+						// }
+						for (let a of this._layerList) {
+							let v = a.node
+							if (v.active) {
+								let vOrder = a.getOrder()
+								if (vOrder <= order) {
+									let vIdx = v.getSiblingIndex()
+									if (vIdx > idx) {
+										idx = vIdx
+									}
+								}
+							}
+						}
+
+						if (node.parent == parent) {
+							if (node.getSiblingIndex() < idx) { idx = idx - 1 }
+						} else {
+							node.parent = parent
+						}
+						node.setSiblingIndex(idx + 1)
 					}
+
 					if (!dialogModel.isShowing) {
 						dialogModel.isShowing = true
 						dialogModel.comp.onShow && dialogModel.comp.onShow()
@@ -576,7 +662,7 @@ namespace gcc.layer {
 		 * 关闭所有对话框
 		 */
 		closeAllDialogs() {
-			this._dialogList.concat().forEach(d => this.closeDialog(d));
+			this._layerList.concat().forEach(d => this.closeDialog(d));
 		}
 
 		destoryDialog(uri: string) {
@@ -596,7 +682,7 @@ namespace gcc.layer {
 				root.active = false
 				if (destroy) {
 					root.destroy()
-					this._dialogList.remove(v)
+					this._layerList.remove(v)
 				}
 			} else {
 				v.isCancelShowing = true;
