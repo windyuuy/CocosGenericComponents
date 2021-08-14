@@ -1,6 +1,16 @@
 
 namespace gcc.layer {
 
+	export type TagTarget = Object
+
+	/**
+	 * 对象tag属性记录
+	 */
+	export class TagRecord {
+		target: TagTarget
+		tagsSet: Set<string> = new Set<string>()
+	}
+
 	/**
 	 * tag管理类
 	 */
