@@ -106,7 +106,9 @@ namespace gcc.layer {
 		 * @returns 
 		 */
 		getOrder(tags: string[]): number {
-			let tag = tags[0]
+			let tag = lang.helper.ArrayHelper.max(tags, (tag) => {
+				return this.tagsOrderMap[tag]
+			})
 			if (tag) {
 				return this.tagsOrderMap[tag]
 			} else {
