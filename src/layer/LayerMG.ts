@@ -18,8 +18,8 @@ namespace gcc.layer {
 		get layerRoot() {
 			return this.sharedLayerMGComp.layerRoot
 		}
-		get layerComp(): cc.Component {
-			return this.sharedLayerMGComp as any as cc.Component
+		get layerComp(): cc.Component & IDialogInnerCall {
+			return this.sharedLayerMGComp as any as (cc.Component & IDialogInnerCall)
 		}
 
 		/**
@@ -304,7 +304,7 @@ namespace gcc.layer {
 
 					if (!dialogModel.isShowing) {
 						dialogModel.isShowing = true
-						dialogModel.comp.onShow && dialogModel.comp.onShow()
+						dialogModel.comp.__callOnShow && dialogModel.comp.__callOnShow()
 					}
 					this.postLayerChange(dialogModel.node)
 					resolve(dialogModel)

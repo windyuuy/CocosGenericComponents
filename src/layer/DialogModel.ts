@@ -61,7 +61,7 @@ namespace gcc.layer {
 		/**
 		 * 每次由隐藏变为显示调用
 		 */
-		onShow()
+		__callOnShow()
 
 		/**
 		 * 隐藏对话框
