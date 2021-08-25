@@ -70,7 +70,7 @@ namespace gcc.layer {
 		/**
 		 * 每次由显示变为隐藏调用
 		 */
-		onHide()
+		__callOnHide()
 
 		/**
 		 * 关闭对话框
@@ -79,7 +79,7 @@ namespace gcc.layer {
 		/**
 		 * 关闭调用
 		 */
-		onClose()
+		__callOnClose()
 
 		/**
 		 * 顶级图层改变时调用

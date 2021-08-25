@@ -336,14 +336,14 @@ namespace gcc.layer {
 			} else {
 				let layerComp = layerModel.node.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
 				if (layerComp) {
-					layerComp["onClose"] && layerComp["onClose"]()
+					layerComp["__callOnClose"] && layerComp["__callOnClose"]()
 					if (instant) {
 						this.doClose(layerModel, layerModel.destroyOnClose)
-						layerComp["onHide"] && layerComp["onHide"]()
+						layerComp["__callOnHide"] && layerComp["__callOnHide"]()
 					} else {
 						layerComp.playCloseAnimation(() => {
 							this.doClose(layerModel, layerModel.destroyOnClose)
-							layerComp["onHide"] && layerComp["onHide"]()
+							layerComp["__callOnHide"] && layerComp["__callOnHide"]()
 						})
 					}
 				} else {

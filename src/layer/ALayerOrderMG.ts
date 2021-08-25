@@ -1,6 +1,7 @@
 
 namespace gcc.layer {
 
+	// TODO: 支持图层依赖
 	/**
 	 * 基于tag的图层顺序管理
 	 */
@@ -13,7 +14,7 @@ namespace gcc.layer {
 		/**
 		 * 设置tag初始依赖顺序
 		 */
-		setupTagsDepends(tags: string[]) {
+		setupTagOrders(tags: string[]) {
 			tags.forEach((tag, index) => {
 				this.tagsOrderMap[tag] = index
 			})
@@ -26,7 +27,7 @@ namespace gcc.layer {
 		 * @param tag 
 		 * @param dependTags 
 		 */
-		setTagDepends(tag: string, dependTags: string[], force: boolean = false) {
+		setTagOrders(tag: string, dependTags: string[], force: boolean = false) {
 			if (this.tagsOrderMap[tag] == undefined) {
 				this.tagsOrderMap[tag] = 0
 			}
@@ -96,8 +97,8 @@ namespace gcc.layer {
 		 * @param tag
 		 * @param dependTags
 		 */
-		setTagDepend(tag: string, dependTag: string, force: boolean = false) {
-			return this.setTagDepends(tag, [dependTag], force)
+		setTagOrder(tag: string, dependTag: string, force: boolean = false) {
+			return this.setTagOrders(tag, [dependTag], force)
 		}
 
 		/**
