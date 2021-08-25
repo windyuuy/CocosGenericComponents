@@ -10,6 +10,27 @@ namespace gcc.respool {
 		protected prefabMap: { [key: string]: cc.Prefab } = EmptyTable()
 		protected prefabLoaderMap: { [key: string]: resloader.CCPrefabLoadLisenter } = EmptyTable()
 
+		protected instSaveKeyAcc = 1
+		protected savedKeys: { [key: string]: Node } = EmptyTable()
+		instantiate(sampleNode: cc.Node, saveKey0?: string): cc.Node {
+			let saveKey = sampleNode[CCNodeSaveKey]
+			if (saveKey === undefined) {
+				saveKey = saveKey0
+			}
+			if (saveKey === undefined) {
+				saveKey = sampleNode[CCNodeSaveKey] = `#sample_node_${this.instSaveKeyAcc++}`
+				let node = cc.instantiate(sampleNode)
+				node[CCNodeSaveKey] = saveKey
+			} else {
+				let node = this.popByKey(saveKey)
+				if (node === undefined) {
+					node = cc.instantiate(sampleNode)
+					node[CCNodeSaveKey] = saveKey
+				}
+				return node
+			}
+		}
+
 		protected loadAndSavePrefab(prefabId: string, prefabUrl: string, call?: (prefab: cc.Prefab, err?: Error) => void) {
 			if (this.prefabMap[prefabId] == null) {
 				this.loadPrefabRaw(prefabUrl, (prefab, err) => {

@@ -1,11 +1,11 @@
 
 namespace gcc.respool {
 
-	export class TMyNodePool {
+	export class TMyNodePool<TNode = cc.Node, TPrefab = cc.Prefab> {
 		protected nodePoolMap: gcc.respool.CCEasyNodePoolMap = new gcc.respool.CCEasyNodePoolMap()
 
-		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean = true, call?: (prefab: cc.Prefab, err?: Error) => void) {
-			this.nodePoolMap.registerPrefabUrl(prefabId, prefabUrl, preload, call)
+		registerPrefabUrl(prefabId: string, prefabUrl: string, preload: boolean = true, call?: (prefab: TPrefab, err?: Error) => void) {
+			this.nodePoolMap.registerPrefabUrl(prefabId, prefabUrl, preload, call as any)
 		}
 
 		registerPrefabUrlAsync(prefabId: string, prefabUrl: string) {
@@ -20,22 +20,26 @@ namespace gcc.respool {
 			})
 		}
 
-		registerPrefab(prefabId: string, prefab: cc.Prefab) {
-			this.nodePoolMap.registerPrefab(prefabId, prefab)
+		registerPrefab(prefabId: string, prefab: TPrefab) {
+			this.nodePoolMap.registerPrefab(prefabId, prefab as any as cc.Prefab)
 		}
 
-		put(node: cc.Node, retain: boolean = false) {
-			this.nodePoolMap.putNode(node, retain)
+		put(node: TNode, retain: boolean = false) {
+			this.nodePoolMap.putNode(node as any as cc.Node, retain)
 		}
 
-		get(prefabId: string): cc.Node {
-			return this.nodePoolMap.getNode(prefabId)
+		get(prefabId: string): TNode {
+			return this.nodePoolMap.getNode(prefabId) as any as TNode
 		}
 
-		load(prefabId: string, call: (node: cc.Node, err?: Error) => void): void {
+		instantiate(sampleNode: TNode, saveKey0?: string): TNode {
+			return this.nodePoolMap.instantiate(sampleNode as any as cc.Node, saveKey0) as any as TNode
+		}
+
+		load(prefabId: string, call: (node: TNode, err?: Error) => void): void {
 			this.nodePoolMap.loadNode(prefabId, (node, err) => {
 				if (node != null) {
-					call(node, err)
+					call(node as any as TNode, err)
 					return
 				}
 
@@ -43,13 +47,13 @@ namespace gcc.respool {
 					if (node != null) {
 						this.nodePoolMap.registerPrefabUrl(prefabId, prefabId, true)
 					}
-					call(node, err)
+					call(node as any as TNode, err)
 					return;
 				})
 			})
 		}
 
-		async loadAsync(prefabId: string): Promise<cc.Node> {
+		async loadAsync(prefabId: string): Promise<TNode> {
 			return new Promise((resolve, reject) => {
 				this.load(prefabId, (node, err) => {
 					if (err) {
@@ -61,14 +65,14 @@ namespace gcc.respool {
 			})
 		}
 
-		loadPrefab(prefabId: string, call: (prefab: cc.Prefab, err?: Error) => void) {
+		loadPrefab(prefabId: string, call: (prefab: TPrefab, err?: Error) => void) {
 			this.nodePoolMap.loadPrefab(prefabId, (prefab, err) => {
 				if (prefab != null) {
-					call(prefab, err)
+					call(prefab as any as TPrefab, err)
 					return
 				}
 
-				this.nodePoolMap.loadPrefab(prefabId, call)
+				this.nodePoolMap.loadPrefab(prefabId, call as any)
 			})
 		}
 

@@ -132,6 +132,15 @@ namespace gcc.respool {
 			return node
 		}
 
+		popByKey(key: string): cc.Node | undefined {
+			let pool = this.resPoolMap[key]
+			if (pool && pool.length > 0) {
+				let node = pool.pop()
+				return node
+			}
+			return undefined
+		}
+
 		put(node: cc.Node) {
 			if (cc.isValid(node)) {
 				node.parent = null

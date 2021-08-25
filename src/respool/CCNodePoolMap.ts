@@ -113,6 +113,10 @@ namespace gcc.respool {
 			}
 		}
 
+		popByKey(key: string): cc.Node | undefined {
+			return ccNodePreloader.popByKey(key)
+		}
+
 		clear() {
 			for (let key in this.resPoolMap) {
 				let pool = this.resPoolMap[key]
