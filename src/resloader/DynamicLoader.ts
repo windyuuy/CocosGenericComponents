@@ -20,6 +20,15 @@ namespace gcc.resloader {
 		err?: Error
 		res?: T
 		protected onLoadList: ((res: T) => void)[] = []
+		get isResReady() {
+			return this.isFinished && this.isLoaded
+		}
+		getRes(): T | undefined {
+			if (this.isResReady) {
+				return this.res
+			}
+			return undefined
+		}
 		onLoad(call: (res: T) => void) {
 			this.onLoadList.push(call)
 

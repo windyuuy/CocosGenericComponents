@@ -25,6 +25,24 @@ namespace gcc.respool {
 				}
 			})
 		}
+		getPrefabRaw(prefabUrl: string, call: (prefab: cc.Prefab, err?: Error) => void) {
+			// cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
+			// 	call(prefab, err)
+			// })
+			var loader = resloader.ccResLoader.getPrefab(prefabUrl)
+			loader.onLoad((prefab) => {
+				if (call != null) {
+					call(prefab)
+					call = null
+				}
+			})
+			loader.onError((err) => {
+				if (call != null) {
+					call(null, err)
+					call = null
+				}
+			})
+		}
 
 		getOrCreateNodeWithPrefabUrl(prefabId: string, prefabUrl: string, call: (node: cc.Node, err: Error) => void) {
 			let pool = this.getResPool(prefabId)

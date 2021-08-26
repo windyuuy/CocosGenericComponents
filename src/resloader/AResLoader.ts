@@ -2,6 +2,7 @@
 namespace gcc.resloader {
 	export interface IResAsyncLoader<T> {
 		load(url: string, onDone: (err: Error, asset: T) => void)
+		get(url: string, onDone: (err: Error, asset: T) => void)
 	}
 
 	/**
@@ -41,6 +42,29 @@ namespace gcc.resloader {
 				}
 				if (loader != null) {
 					loader.load(url, onLoaded);
+				} else {
+					throw new Error("loader not implemented")
+				}
+			}
+			return notifier
+		}
+
+		getRes(url: string, loader: IResAsyncLoader<T>): IResLoadListener<T> | undefined {
+			let existNotifier = this.existNotifier(url)
+			let notifier = this.getNotifier(url)
+			if (!existNotifier) {
+				var onLoaded = (err, asset) => {
+					let isLoaded = (err == null && asset != null)
+					if (isLoaded) {
+						notifier.notifyOnLoad(asset)
+					} else {
+						// 加载失败
+						console.error(`load res failed, url:${url}, err:`, err)
+						notifier.notifyOnError(err)
+					}
+				}
+				if (loader != null) {
+					loader.get(url, onLoaded);
 				} else {
 					throw new Error("loader not implemented")
 				}

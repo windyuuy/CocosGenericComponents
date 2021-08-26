@@ -109,6 +109,13 @@ namespace gcc.respool {
 
 		getNode(prefabId: string): cc.Node {
 			let prefab = this.prefabMap[prefabId]
+			if (prefab == null) {
+				this.getPrefabRaw(prefabId, (prefab0, err) => {
+					if (err == null) {
+						prefab = prefab0
+					}
+				})
+			}
 			let node = this.getOrCreateNodeWithPrefab(prefabId, prefab)
 			return node
 		}
