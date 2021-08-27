@@ -6,6 +6,7 @@
 	"files": [
 	],
 	"references": [
+		{ "path": "../../../fsync/src/lang/common" },
 		{ "path": "../../../fsync/src/fsync/common" },
 		{ "path": "../../../fsync/src/fsync/amath" },
 	],

@@ -1,6 +1,8 @@
 
 namespace gcc.layer {
 
+	export type TLayerUri = string
+
 	/**
 	 * 对话框的状态
 	 */
@@ -163,6 +165,10 @@ namespace gcc.layer {
 		 * 显示当前对话框
 		 */
 		public isShowing: boolean
+		/**
+		 * 对话框是否已经打开
+		 */
+		public isOpen: boolean
 
 		/**
 		 * 是否封面
@@ -174,6 +180,7 @@ namespace gcc.layer {
 			this.data = data
 			this.isCancelShowing = false;
 			this.isShowing = false
+			this.isOpen = false
 		}
 	}
 

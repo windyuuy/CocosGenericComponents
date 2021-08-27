@@ -50,7 +50,14 @@ namespace gcc.layer {
 			return this.sharedLayerMGComp
 		}
 
-		preloadDialog(p: ShowDialogParam): Promise<DialogModel> {
+		preloadDialog(p0: string | ShowDialogParam): Promise<DialogModel> {
+			let p: ShowDialogParam
+			if (typeof (p0) == "string") {
+				p = new ShowDialogParam(p0)
+			} else {
+				p = p0
+			}
+
 			return new Promise((resolve, reject) => {
 				this.createDialog(p).then((dialogModel) => {
 					// const node = dialogModel.node
@@ -67,7 +74,14 @@ namespace gcc.layer {
 			})
 		}
 
-		createDialog(p: ShowDialogParam): Promise<DialogModel> {
+		createDialog(p0: string | ShowDialogParam): Promise<DialogModel> {
+			let p: ShowDialogParam
+			if (typeof (p0) == "string") {
+				p = new ShowDialogParam(p0)
+			} else {
+				p = p0
+			}
+
 			return new Promise((resolve, reject) => {
 				this.showLoading()
 				let resUri = p.resUri
@@ -260,52 +274,61 @@ namespace gcc.layer {
 
 			return new Promise<DialogModel>((resolve, reject) => {
 				this.getOrCreateDialog(p).then((dialogModel) => {
-					const node = dialogModel.node
-
-					if (!node.active) {
-						node.active = true
+					if (dialogModel.isOpen) {
+						return
 					}
-					// 更新图层顺序
+					dialogModel.isOpen = true
+
+					if (dialogModel.isShowing) {
+						return
+					}
+					dialogModel.isShowing = true
+
 					{
-						let parent = this.MGConfig.layerRoot
-						let order = dialogModel.getOrder()
-						let idx = -1
-						// for (let i = parent.children.length - 1; i >= 0; i--) {
-						// 	let v = parent.children[i]
-						// 	if (v.active) {
-						// 		let data = this._layerList.find(a => a.node == v)
-						// 		let vOrder = data ? data.getOrder() : 0
-						// 		if (vOrder <= order) {
-						// 			idx = i
-						// 			break
-						// 		}
-						// 	}
-						// }
-						for (let a of this._layerList) {
-							let v = a.node
-							if (v.active) {
-								let vOrder = a.getOrder()
-								if (vOrder <= order) {
-									let vIdx = v.getSiblingIndex()
-									if (vIdx > idx) {
-										idx = vIdx
+						const node = dialogModel.node
+						if (!node.active) {
+							node.active = true
+						}
+						// 更新图层顺序
+						{
+							let parent = this.MGConfig.layerRoot
+							let order = dialogModel.getOrder()
+							let idx = -1
+							// for (let i = parent.children.length - 1; i >= 0; i--) {
+							// 	let v = parent.children[i]
+							// 	if (v.active) {
+							// 		let data = this._layerList.find(a => a.node == v)
+							// 		let vOrder = data ? data.getOrder() : 0
+							// 		if (vOrder <= order) {
+							// 			idx = i
+							// 			break
+							// 		}
+							// 	}
+							// }
+							for (let a of this._layerList) {
+								let v = a.node
+								if (v.active) {
+									let vOrder = a.getOrder()
+									if (vOrder <= order) {
+										let vIdx = v.getSiblingIndex()
+										if (vIdx > idx) {
+											idx = vIdx
+										}
 									}
 								}
 							}
-						}
 
-						if (node.parent == parent) {
-							if (node.getSiblingIndex() <= idx) { idx = idx - 1 }
-						} else {
-							node.parent = parent
+							if (node.parent == parent) {
+								if (node.getSiblingIndex() <= idx) { idx = idx - 1 }
+							} else {
+								node.parent = parent
+							}
+							node.setSiblingIndex(idx + 1)
 						}
-						node.setSiblingIndex(idx + 1)
 					}
 
-					if (!dialogModel.isShowing) {
-						dialogModel.isShowing = true
-						dialogModel.comp.__callOnShow && dialogModel.comp.__callOnShow()
-					}
+					dialogModel.comp.__callOnShow && dialogModel.comp.__callOnShow()
+
 					this.postLayerChange(dialogModel.node)
 					resolve(dialogModel)
 				}).catch((reason) => {
@@ -329,6 +352,10 @@ namespace gcc.layer {
 				console.warn("no layer", uri)
 				return
 			}
+			if (!layerModel.isOpen) {
+				return
+			}
+			layerModel.isOpen = false
 
 			layerModel.isShowing = false
 			if (!layerModel.node) {
