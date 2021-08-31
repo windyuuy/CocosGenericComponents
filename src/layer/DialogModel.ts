@@ -35,6 +35,7 @@ namespace gcc.layer {
 	export interface IDialogInnerCall {
 		onEnter(): void;
 		playCloseAnimation(finished: () => void)
+		playOpenAnimation(finished: () => void)
 		onExposed();
 		onShield();
 		node: cc.Node;
@@ -55,6 +56,9 @@ namespace gcc.layer {
 		 * 获取当前默认的layer管理器
 		 */
 		readonly layerMG
+
+		__callOnOpening()
+		__callOnOpened()
 
 		/**
 		 * 显示对话框
@@ -79,9 +83,14 @@ namespace gcc.layer {
 		 */
 		close()
 		/**
+		 * 开始关闭调用
+		 */
+		__callOnClosing()
+
+		/**
 		 * 关闭调用
 		 */
-		__callOnClose()
+		__callOnClosed()
 
 		/**
 		 * 顶级图层改变时调用
@@ -89,9 +98,9 @@ namespace gcc.layer {
 		onCoverChanged?()
 
 		/**
-		 * 焦点改变时调用
+		 * 全局任意图层焦点改变时调用
 		 */
-		onFocusChanged?(focus: boolean)
+		onAnyFocusChanged?(focus: boolean)
 
 	}
 

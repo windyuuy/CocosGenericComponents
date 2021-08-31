@@ -252,9 +252,9 @@ namespace gcc.layer {
 			this.refreshDialogState();
 			this._layerList.forEach(layer => {
 				const comp = layer.comp
-				if (comp.onFocusChanged) {
+				if (comp.onAnyFocusChanged) {
 					let focus = dialogNode == comp.node
-					comp.onFocusChanged(focus);
+					comp.onAnyFocusChanged(focus);
 				}
 			})
 		}
@@ -284,53 +284,58 @@ namespace gcc.layer {
 					}
 					dialogModel.isShowing = true
 
-					{
-						const node = dialogModel.node
-						if (!node.active) {
-							node.active = true
-						}
-						// 更新图层顺序
+					let layerComp = dialogModel.comp
+					if (layerComp) {
+						layerComp.__callOnOpening && layerComp.__callOnOpening()
+
+						// 调整图层顺序
 						{
-							let parent = this.MGConfig.layerRoot
-							let order = dialogModel.getOrder()
-							let idx = -1
-							// for (let i = parent.children.length - 1; i >= 0; i--) {
-							// 	let v = parent.children[i]
-							// 	if (v.active) {
-							// 		let data = this._layerList.find(a => a.node == v)
-							// 		let vOrder = data ? data.getOrder() : 0
-							// 		if (vOrder <= order) {
-							// 			idx = i
-							// 			break
-							// 		}
-							// 	}
-							// }
-							for (let a of this._layerList) {
-								let v = a.node
-								if (v.active) {
-									let vOrder = a.getOrder()
-									if (vOrder <= order) {
-										let vIdx = v.getSiblingIndex()
-										if (vIdx > idx) {
-											idx = vIdx
+							const node = dialogModel.node
+							if (!node.active) {
+								node.active = true
+							}
+							// 更新图层顺序
+							{
+								let parent = this.MGConfig.layerRoot
+								let order = dialogModel.getOrder()
+								let idx = -1
+								for (let a of this._layerList) {
+									let v = a.node
+									if (v.active) {
+										let vOrder = a.getOrder()
+										if (vOrder <= order) {
+											let vIdx = v.getSiblingIndex()
+											if (vIdx > idx) {
+												idx = vIdx
+											}
 										}
 									}
 								}
-							}
 
-							if (node.parent == parent) {
-								if (node.getSiblingIndex() <= idx) { idx = idx - 1 }
-							} else {
-								node.parent = parent
+								if (node.parent == parent) {
+									if (node.getSiblingIndex() <= idx) { idx = idx - 1 }
+								} else {
+									node.parent = parent
+								}
+								node.setSiblingIndex(idx + 1)
 							}
-							node.setSiblingIndex(idx + 1)
 						}
+
+						layerComp.__callOnShow && layerComp.__callOnShow()
+						if (p.instant) {
+							this.postLayerChange(dialogModel.node)
+							layerComp["__callOnOpened"] && layerComp["__callOnOpened"]()
+							resolve(dialogModel)
+						} else {
+							layerComp.playOpenAnimation(() => {
+								this.postLayerChange(dialogModel.node)
+								layerComp["__callOnOpened"] && layerComp["__callOnOpened"]()
+								resolve(dialogModel)
+							})
+						}
+					} else {
+						reject("no such component")
 					}
-
-					dialogModel.comp.__callOnShow && dialogModel.comp.__callOnShow()
-
-					this.postLayerChange(dialogModel.node)
-					resolve(dialogModel)
 				}).catch((reason) => {
 					reject(reason)
 				})
@@ -341,42 +346,50 @@ namespace gcc.layer {
 			return this.closeDialog(uri)
 		}
 
-		closeDialog(uri: string | DialogModel, instant: boolean = true) {
-			let layerModel: DialogModel
-			if (typeof (uri) == "string") {
-				layerModel = this._findDialog(uri)
-			} else {
-				layerModel = uri
-			}
-			if (!layerModel) {
-				console.warn("no layer", uri)
-				return
-			}
-			if (!layerModel.isOpen) {
-				return
-			}
-			layerModel.isOpen = false
-
-			layerModel.isShowing = false
-			if (!layerModel.node) {
-				this.doClose(layerModel)
-			} else {
-				let layerComp = layerModel.node.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
-				if (layerComp) {
-					layerComp["__callOnClose"] && layerComp["__callOnClose"]()
-					if (instant) {
-						this.doClose(layerModel, layerModel.destroyOnClose)
-						layerComp["__callOnHide"] && layerComp["__callOnHide"]()
-					} else {
-						layerComp.playCloseAnimation(() => {
-							this.doClose(layerModel, layerModel.destroyOnClose)
-							layerComp["__callOnHide"] && layerComp["__callOnHide"]()
-						})
-					}
+		closeDialog(uri: string | DialogModel, instant: boolean = true): Promise<DialogModel> {
+			return new Promise<DialogModel>((resolve, reject) => {
+				let layerModel: DialogModel
+				if (typeof (uri) == "string") {
+					layerModel = this._findDialog(uri)
 				} else {
-					this.doClose(layerModel)
+					layerModel = uri
 				}
-			}
+				if (!layerModel) {
+					console.warn("no layer", uri)
+					return
+				}
+				if (!layerModel.isOpen) {
+					return
+				}
+				layerModel.isOpen = false
+
+				layerModel.isShowing = false
+				if (!layerModel.node) {
+					this.doClose(layerModel)
+					resolve(layerModel)
+				} else {
+					// let layerComp = layerModel.node.getComponent(this.getDialogClass("CCDialogComp")) as IDialogInnerCall
+					let layerComp = layerModel.comp
+					if (layerComp) {
+						layerComp["__callOnClosing"] && layerComp["__callOnClosing"]()
+						layerComp["__callOnHide"] && layerComp["__callOnHide"]()
+						if (instant) {
+							this.doClose(layerModel, layerModel.destroyOnClose)
+							layerComp["__callOnClosed"] && layerComp["__callOnClosed"]()
+							resolve(layerModel)
+						} else {
+							layerComp.playCloseAnimation(() => {
+								this.doClose(layerModel, layerModel.destroyOnClose)
+								layerComp["__callOnClosed"] && layerComp["__callOnClosed"]()
+								resolve(layerModel)
+							})
+						}
+					} else {
+						this.doClose(layerModel)
+						resolve(layerModel)
+					}
+				}
+			})
 		}
 
 		/**
@@ -394,10 +407,11 @@ namespace gcc.layer {
 			}
 
 			layerModel.destroyOnClose = true
-			this.destoryDialog(uri)
+			return this.closeDialog(uri)
 		}
 
 		private doClose(v: DialogModel, destroy: boolean = false) {
+			this.postLayerChange(v.node)
 			if (v.node && v.node.isValid) {
 				let root = v.node
 				root.active = false
@@ -408,7 +422,6 @@ namespace gcc.layer {
 			} else {
 				v.isCancelShowing = true;
 			}
-			this.postLayerChange(v.node)
 		}
 
 	}

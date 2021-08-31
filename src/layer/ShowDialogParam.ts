@@ -2,6 +2,14 @@
 namespace gcc.layer {
 
 	export class ShowDialogParam {
+		/**
+		 * 不播放动画, 立即打开
+		 */
+		instant?: boolean
+		/**
+		 * 关闭时直接销毁
+		 */
+		destroyOnClose?: boolean
 		protected _uri?: string;
 		protected _data?: object;
 		protected _tags: string[];
