@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-27 08:26:19
- * @LastEditTime: 2021-08-27 10:11:29
+ * @LastEditTime: 2021-09-01 10:17:53
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \CocosGenericComponents\src\layer\SceneBundle.ts
@@ -127,6 +127,27 @@ namespace gcc.layer {
 			this.foreachLayerBundleItems(name, (item) => {
 				layerMG.createDialog(item)
 			})
+		}
+
+		recordBundleName?: string
+		setRecordBundle(name: string) {
+			this.recordBundleName = name
+		}
+		getRecordBundle() {
+			if (this.recordBundleName) {
+				return this.getBundle(this.recordBundleName)
+			}
+			return undefined
+		}
+		addRecordItem(item: LayerBundleInputItem) {
+			if (this.recordBundleName) {
+				this.addBundleItem(item, this.recordBundleName)
+			}
+		}
+		closeRecordBundle() {
+			if (this.recordBundleName) {
+				this.closeBundle(this.recordBundleName)
+			}
 		}
 
 	}
