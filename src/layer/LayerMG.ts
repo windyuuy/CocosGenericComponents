@@ -346,13 +346,25 @@ namespace gcc.layer {
 			return this.closeDialog(uri)
 		}
 
-		closeDialog(uri: string | DialogModel, instant: boolean = true): Promise<DialogModel> {
+		closeDialog(uri0: string | DialogModel | CloseDialogParam, instant: boolean = true): Promise<DialogModel> {
+			let p: CloseDialogParam
+			if (uri0 instanceof CloseDialogParam) {
+				p = uri0
+				p.instant = instant
+			} else if (uri0 instanceof DialogModel) {
+				p = new CloseDialogParam(p.uri, instant)
+			} else {
+				p = new CloseDialogParam(uri0, instant)
+			}
+			const uri = p.uri
+			instant = p.instant
+
 			return new Promise<DialogModel>((resolve, reject) => {
 				let layerModel: DialogModel
-				if (typeof (uri) == "string") {
-					layerModel = this._findDialog(uri)
+				if (uri0 instanceof DialogModel) {
+					layerModel = uri0
 				} else {
-					layerModel = uri
+					layerModel = this._findDialog(uri)
 				}
 				if (!layerModel) {
 					console.warn("no layer", uri)
@@ -385,7 +397,7 @@ namespace gcc.layer {
 							})
 						}
 					} else {
-						this.doClose(layerModel)
+						this.doClose(layerModel, true)
 						resolve(layerModel)
 					}
 				}
@@ -399,8 +411,13 @@ namespace gcc.layer {
 			this._layerList.concat().forEach(d => this.closeDialog(d));
 		}
 
-		destoryDialog(uri: string) {
-			let layerModel = this._findDialog(uri)
+		destoryDialog(uri: string | DialogModel) {
+			let layerModel: DialogModel
+			if (uri instanceof DialogModel) {
+				layerModel = uri
+			} else {
+				layerModel = this._findDialog(uri)
+			}
 			if (!layerModel) {
 				console.warn("no layer", uri)
 				return
@@ -416,6 +433,7 @@ namespace gcc.layer {
 				let root = v.node
 				root.active = false
 				if (destroy) {
+					v.comp.__callOnBeforeDestory()
 					root.destroy()
 					this._layerList.remove(v)
 				}

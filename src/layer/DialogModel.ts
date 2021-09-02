@@ -38,12 +38,11 @@ namespace gcc.layer {
 		playOpenAnimation(finished: () => void)
 		onExposed();
 		onShield();
+
 		node: cc.Node;
 
 		dialogModel: DialogModel
 		readonly rawData: any
-
-		modelLayer: cc.Node
 
 		/**
 		 * 初次创建调用
@@ -91,6 +90,11 @@ namespace gcc.layer {
 		 * 关闭调用
 		 */
 		__callOnClosed()
+
+		/**
+		 * 销毁前调用
+		 */
+		__callOnBeforeDestory()
 
 		/**
 		 * 顶级图层改变时调用
