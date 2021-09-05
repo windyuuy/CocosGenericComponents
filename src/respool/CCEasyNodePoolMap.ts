@@ -107,6 +107,18 @@ namespace gcc.respool {
 			call(null, new Error("invalid prefabId"))
 		}
 
+		getPrefab(prefabId: string): cc.Prefab {
+			let prefab = this.prefabMap[prefabId]
+			if (prefab == null) {
+				this.getPrefabRaw(prefabId, (prefab0, err) => {
+					if (err == null) {
+						prefab = prefab0
+					}
+				})
+			}
+			return prefab
+		}
+
 		getNode(prefabId: string): cc.Node {
 			let prefab = this.prefabMap[prefabId]
 			if (prefab == null) {

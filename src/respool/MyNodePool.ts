@@ -32,6 +32,10 @@ namespace gcc.respool {
 			return this.nodePoolMap.getNode(prefabId) as any as TNode
 		}
 
+		getPrefab(prefabId: string): TPrefab {
+			return this.nodePoolMap.getPrefab(prefabId) as any as TPrefab
+		}
+
 		instantiate(sampleNode: TNode, saveKey0?: string): TNode {
 			return this.nodePoolMap.instantiate(sampleNode as any as cc.Node, saveKey0) as any as TNode
 		}

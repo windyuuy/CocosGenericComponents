@@ -74,6 +74,7 @@ namespace gcc.layer {
 			})
 		}
 
+		protected loadingDialogTasks: Map<string, Promise<DialogModel>> = new Map()
 		createDialog(p0: string | ShowDialogParam): Promise<DialogModel> {
 			let p: ShowDialogParam
 			if (typeof (p0) == "string") {
@@ -82,7 +83,11 @@ namespace gcc.layer {
 				p = p0
 			}
 
-			return new Promise((resolve, reject) => {
+			if (this.loadingDialogTasks.has(p.uri)) {
+				return this.loadingDialogTasks.get(p.uri)
+			}
+
+			let task = new Promise<DialogModel>((resolve, reject) => {
 				this.showLoading()
 				let resUri = p.resUri
 				respool.MyNodePool.load(resUri, (dialogNode, err) => {
@@ -117,12 +122,17 @@ namespace gcc.layer {
 							dialog["onCreate"](dialogModel.data)
 							dialogModel.state = DialogState.Inited
 
+							this.loadingDialogTasks.delete(p.uri)
+
 							resolve(dialogModel)
 						}
 
 					}
 				});
 			})
+
+			this.loadingDialogTasks.set(p.uri, task)
+			return task
 		}
 
 		protected _findDialog(uri: string) {
@@ -352,7 +362,7 @@ namespace gcc.layer {
 				p = uri0
 				p.instant = instant
 			} else if (uri0 instanceof DialogModel) {
-				p = new CloseDialogParam(p.uri, instant)
+				p = new CloseDialogParam(uri0.uri, instant)
 			} else {
 				p = new CloseDialogParam(uri0, instant)
 			}

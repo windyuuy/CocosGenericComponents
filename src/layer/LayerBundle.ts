@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-27 08:26:19
- * @LastEditTime: 2021-09-01 10:17:53
+ * @LastEditTime: 2021-09-03 17:46:03
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \CocosGenericComponents\src\layer\SceneBundle.ts
@@ -118,9 +118,11 @@ namespace gcc.layer {
 		}
 
 		preloadBundle(name: string, layerMG: TLayerMG = this.layerMG) {
+			let ls: Promise<DialogModel>[] = []
 			this.foreachLayerBundleItems(name, (item) => {
-				layerMG.preloadDialog(item)
+				ls.push(layerMG.preloadDialog(item))
 			})
+			return Promise.all(ls)
 		}
 
 		createBundleItems(name: string, layerMG: TLayerMG = this.layerMG) {
