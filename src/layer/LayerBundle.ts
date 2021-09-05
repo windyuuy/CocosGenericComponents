@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-27 08:26:19
- * @LastEditTime: 2021-09-03 17:46:03
+ * @LastEditTime: 2021-09-05 09:56:49
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \CocosGenericComponents\src\layer\SceneBundle.ts
@@ -67,12 +67,17 @@ namespace gcc.layer {
 		}
 
 
+		protected _addBundleItem(item: string, bundle: string[]) {
+			if (!bundle.exist(item)) {
+				bundle.push(item)
+			}
+		}
 		addBundleItem(item: LayerBundleInputItem, bundleName: string = DefaultBundleName) {
 			let bundle = this.getBundle(bundleName)
 			if (typeof (item) == "string") {
-				bundle.push(item)
+				this._addBundleItem(item, bundle)
 			} else {
-				bundle.push(item.uid)
+				this._addBundleItem(item.uid, bundle)
 			}
 		}
 
@@ -88,46 +93,49 @@ namespace gcc.layer {
 		/**
 		 * 展开层束
 		 */
-		foreachLayerBundleItems(name: TLayerBundleId | TLayerUri, call: (item: TLayerUri) => void) {
+		private _foreachLayerBundleItems<T>(name: TLayerBundleId | TLayerUri, call: (item: TLayerUri) => Promise<T>, ls: Promise<T>[] = []) {
 			let bundle = this.layerBundleMap[name]
 			if (bundle && bundle instanceof Array) {
 				for (let subName of bundle) {
-					this.foreachLayerBundleItems(subName, call)
+					this._foreachLayerBundleItems(subName, call, ls)
 				}
 			} else {
-				call(name)
+				let task = call(name)
+				ls.push(task)
 			}
+			return ls
+		}
+		foreachLayerBundleItems<T>(name: TLayerBundleId | TLayerUri, call: (item: TLayerUri) => Promise<T>) {
+			return Promise.all(this._foreachLayerBundleItems(name, call, []))
 		}
 
 		showBundle(name: string, layerMG: TLayerMG = this.layerMG) {
-			this.foreachLayerBundleItems(name, (item) => {
-				layerMG.showDialog(item)
+			return this.foreachLayerBundleItems(name, (item) => {
+				return layerMG.showDialog(item)
 			})
 		}
 
 		closeBundle(name: string, layerMG: TLayerMG = this.layerMG) {
-			this.foreachLayerBundleItems(name, (item) => {
-				layerMG.closeDialog(item)
+			return this.foreachLayerBundleItems(name, (item) => {
+				return layerMG.closeDialog(item)
 			})
 		}
 
 		hideBundle(name: string, layerMG: TLayerMG = this.layerMG) {
-			this.foreachLayerBundleItems(name, (item) => {
-				layerMG.hideDialog(item)
+			return this.foreachLayerBundleItems(name, (item) => {
+				return layerMG.hideDialog(item)
 			})
 		}
 
 		preloadBundle(name: string, layerMG: TLayerMG = this.layerMG) {
-			let ls: Promise<DialogModel>[] = []
-			this.foreachLayerBundleItems(name, (item) => {
-				ls.push(layerMG.preloadDialog(item))
+			return this.foreachLayerBundleItems(name, (item) => {
+				return layerMG.preloadDialog(item)
 			})
-			return Promise.all(ls)
 		}
 
 		createBundleItems(name: string, layerMG: TLayerMG = this.layerMG) {
-			this.foreachLayerBundleItems(name, (item) => {
-				layerMG.createDialog(item)
+			return this.foreachLayerBundleItems(name, (item) => {
+				return layerMG.createDialog(item)
 			})
 		}
 

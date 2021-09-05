@@ -118,11 +118,10 @@ namespace gcc.layer {
 
 							// 记录到层列表
 							this._layerList.push(dialogModel)
+							this.loadingDialogTasks.delete(p.uri)
 
 							dialog["onCreate"](dialogModel.data)
 							dialogModel.state = DialogState.Inited
-
-							this.loadingDialogTasks.delete(p.uri)
 
 							resolve(dialogModel)
 						}
@@ -273,6 +272,28 @@ namespace gcc.layer {
 		 * 记录的layer列表
 		 */
 		protected _layerList: Array<DialogModel> = new Array()
+		/**
+		 * 记录加载中的列表
+		 */
+		protected _loadingLayers: string[] = []
+		protected _showLayerOrderAcc = 0
+		/**
+		 * 整理显示顺序
+		 */
+		protected sortShowLayerOrders() {
+			if (this._loadingLayers.length > 0) {
+				return
+			}
+
+			let ls = this._layerList.concat()
+			ls.sort((a, b) => {
+				return a.showLayerOrder - b.showLayerOrder
+			})
+			ls.forEach((v, i) => {
+				v.showLayerOrder = i
+			})
+			this._showLayerOrderAcc = this._layerList.length
+		}
 
 		showDialog(p0: string | ShowDialogParam) {
 			let p: ShowDialogParam
@@ -282,14 +303,20 @@ namespace gcc.layer {
 				p = p0
 			}
 
-			return new Promise<DialogModel>((resolve, reject) => {
+			this._loadingLayers.push(p.uri)
+			let showLayerOrder = this._showLayerOrderAcc++
+
+			let task = new Promise<DialogModel>((resolve, reject) => {
 				this.getOrCreateDialog(p).then((dialogModel) => {
+					dialogModel.showLayerOrder = showLayerOrder
 					if (dialogModel.isOpen) {
+						resolve(dialogModel)
 						return
 					}
 					dialogModel.isOpen = true
 
 					if (dialogModel.isShowing) {
+						resolve(dialogModel)
 						return
 					}
 					dialogModel.isShowing = true
@@ -308,12 +335,14 @@ namespace gcc.layer {
 							{
 								let parent = this.MGConfig.layerRoot
 								let order = dialogModel.getOrder()
+								let showLayerOrder0 = dialogModel.showLayerOrder
 								let idx = -1
 								for (let a of this._layerList) {
 									let v = a.node
-									if (v.active) {
+									if (v.active && v.parent) {
 										let vOrder = a.getOrder()
-										if (vOrder <= order) {
+										let showLayerOrder1 = a.showLayerOrder
+										if (vOrder < order || (vOrder == order && showLayerOrder0 >= showLayerOrder1)) {
 											let vIdx = v.getSiblingIndex()
 											if (vIdx > idx) {
 												idx = vIdx
@@ -323,7 +352,9 @@ namespace gcc.layer {
 								}
 
 								if (node.parent == parent) {
-									if (node.getSiblingIndex() <= idx) { idx = idx - 1 }
+									if (node.getSiblingIndex() <= idx) {
+										idx = idx - 1
+									}
 								} else {
 									node.parent = parent
 								}
@@ -350,13 +381,23 @@ namespace gcc.layer {
 					reject(reason)
 				})
 			})
+
+			const onTaskDone = () => {
+				this._loadingLayers.remove(p.uri)
+				this.sortShowLayerOrders()
+			}
+			task.then(onTaskDone, () => {
+				onTaskDone()
+			})
+
+			return task
 		}
 
 		hideDialog(uri: string | DialogModel) {
 			return this.closeDialog(uri)
 		}
 
-		closeDialog(uri0: string | DialogModel | CloseDialogParam, instant: boolean = true): Promise<DialogModel> {
+		closeDialog(uri0: string | DialogModel | CloseDialogParam, instant: boolean = true): Promise<DialogModel | undefined> {
 			let p: CloseDialogParam
 			if (uri0 instanceof CloseDialogParam) {
 				p = uri0
@@ -378,9 +419,12 @@ namespace gcc.layer {
 				}
 				if (!layerModel) {
 					console.warn("no layer", uri)
+					resolve(layerModel)
 					return
 				}
 				if (!layerModel.isOpen) {
+					console.warn("layer not open", uri)
+					resolve(layerModel)
 					return
 				}
 				layerModel.isOpen = false
@@ -421,7 +465,7 @@ namespace gcc.layer {
 			this._layerList.concat().forEach(d => this.closeDialog(d));
 		}
 
-		destoryDialog(uri: string | DialogModel) {
+		destoryDialog(uri: string | DialogModel): Promise<DialogModel | undefined> {
 			let layerModel: DialogModel
 			if (uri instanceof DialogModel) {
 				layerModel = uri
@@ -430,7 +474,7 @@ namespace gcc.layer {
 			}
 			if (!layerModel) {
 				console.warn("no layer", uri)
-				return
+				return Promise.resolve(undefined)
 			}
 
 			layerModel.destroyOnClose = true

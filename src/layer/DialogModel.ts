@@ -188,6 +188,12 @@ namespace gcc.layer {
 		 */
 		public isCover: boolean = false
 
+		/**
+		 * show图层的循序
+		 * - 减少对资源异步加载顺序的依赖
+		 */
+		public showLayerOrder: number = -1
+
 		public constructor(uri?: string, data?: object) {
 			this.uri = uri
 			this.data = data
