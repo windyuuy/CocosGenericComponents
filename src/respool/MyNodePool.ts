@@ -24,6 +24,14 @@ namespace gcc.respool {
 			this.nodePoolMap.registerPrefab(prefabId, prefab as any as cc.Prefab)
 		}
 
+		onProgress(prefabUrl: string, call: (count: number, total: number) => void) {
+			return this.nodePoolMap.onLoadResProgress(prefabUrl, call)
+		}
+
+		offProgress(prefabUrl: string, call: (count: number, total: number) => void) {
+			return this.nodePoolMap.offLoadResProgress(prefabUrl, call)
+		}
+
 		put(node: TNode, retain: boolean = false) {
 			this.nodePoolMap.putNode(node as any as cc.Node, retain)
 		}

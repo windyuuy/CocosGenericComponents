@@ -11,6 +11,8 @@ namespace gcc.resloader {
 		onError(call: (err: Error) => void)
 	}
 
+	export type TOnProgress = (count: number, total: number) => void
+
 	/**
 	 * 资源加载通知
 	 */
@@ -44,6 +46,29 @@ namespace gcc.resloader {
 			this.onLoadList.slice().forEach((call) => {
 				call(res)
 			})
+		}
+
+		protected count: number = 0
+		protected total: number = 0.1
+		protected isProgressChanged: boolean = false
+		protected onProgressList: ((count: number, total: number) => void)[] = []
+		notifyOnPrgress(count: number, total: number) {
+			this.isProgressChanged = true
+			this.onProgressList.slice().forEach((call) => {
+				call(count, total)
+			})
+		}
+		onProgress(call: TOnProgress) {
+			this.onProgressList.push(call)
+			if (this.isLoaded || this.isProgressChanged) {
+				call(this.count, this.total)
+			}
+		}
+		offProgress(call: TOnProgress) {
+			let index = this.onProgressList.indexOf(call)
+			if (index >= 0) {
+				this.onProgressList.splice(index, 1)
+			}
 		}
 
 		protected onErrorList: ((err: Error) => void)[] = []

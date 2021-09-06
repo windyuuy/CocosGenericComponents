@@ -50,7 +50,7 @@ namespace gcc.layer {
 			return this.sharedLayerMGComp
 		}
 
-		preloadDialog(p0: string | ShowDialogParam): Promise<DialogModel> {
+		preloadDialog(p0: string | ShowDialogParam): PPromise<DialogModel> {
 			let p: ShowDialogParam
 			if (typeof (p0) == "string") {
 				p = new ShowDialogParam(p0)
@@ -58,7 +58,7 @@ namespace gcc.layer {
 				p = p0
 			}
 
-			return new Promise((resolve, reject) => {
+			let task = createPPromise<DialogModel>((resolve, reject) => {
 				this.createDialog(p).then((dialogModel) => {
 					// const node = dialogModel.node
 					// if (!node.active) {
@@ -72,6 +72,18 @@ namespace gcc.layer {
 					reject(reason)
 				})
 			})
+			task.isWithProgress = true
+
+			let call = respool.MyNodePool.onProgress(p.resUri, (count, total) => {
+				task.notifyProgress(count, total)
+			})
+			task.then((v) => {
+				respool.MyNodePool.offProgress(p.resUri, call)
+			}, (reason) => {
+				respool.MyNodePool.offProgress(p.resUri, call)
+			})
+
+			return task
 		}
 
 		protected loadingDialogTasks: Map<string, Promise<DialogModel>> = new Map()

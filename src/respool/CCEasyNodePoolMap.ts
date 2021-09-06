@@ -10,6 +10,14 @@ namespace gcc.respool {
 		protected prefabMap: { [key: string]: cc.Prefab } = EmptyTable()
 		protected prefabLoaderMap: { [key: string]: resloader.CCPrefabLoadLisenter } = EmptyTable()
 
+		onLoadResProgress(prefabUrl: string, call: (count: number, total: number) => void) {
+			return this.onLoadResProgressRaw(prefabUrl, call)
+		}
+
+		offLoadResProgress(prefabUrl: string, call: (count: number, total: number) => void) {
+			return this.offLoadResProgressRaw(prefabUrl, call)
+		}
+
 		protected instSaveKeyAcc = 1
 		protected savedKeys: { [key: string]: Node } = EmptyTable()
 		instantiate(sampleNode: cc.Node, saveKey0?: string): cc.Node {

@@ -5,8 +5,9 @@ namespace gcc.resloader {
 
 	export type CCPrefabLoadLisenter = IResLoadListener<cc.Prefab>
 
-	export type CCLoaderFunc<T> = (paths: string, type: typeof cc.Asset, onComplete: (error: Error, assets: T) => void) => void
+	export type CCLoaderFunc1<T> = (paths: string, type: typeof cc.Asset, onComplete: (error: Error, assets: T) => void) => void
 	export type CCLoaderFunc2<T> = (paths: string, type: typeof cc.Asset, onProgress: (finish: number, total: number, item: cc.AssetManager.RequestItem) => void, onComplete: (error: Error, assets: T) => void) => void
+	export type CCLoaderFunc<T> = CCLoaderFunc2<T>
 
 	export type CCGettterFunc<T> = (paths: string, type: typeof cc.Asset) => (T | undefined)
 
@@ -40,11 +41,11 @@ namespace gcc.resloader {
 		}
 		protected static loaderFunc0: CCLoaderFunc<cc.Prefab> = null;
 
-		load(url: string, onDone: (err: Error, asset: cc.Prefab) => void) {
+		load(url: string, onDone: (err: Error, asset: cc.Prefab) => void, onProgress: (finish: number, total: number) => void) {
 			let loaderFunc = TCCRawResLoader.loaderFunc0 || (TCCRawResLoader.loaderFunc0 = TCCRawResLoader.getLoaderFunc(url));
 
 			if (loaderFunc != null) {
-				loaderFunc(url, cc["Prefab"], onDone)
+				loaderFunc(url, cc["Prefab"], onProgress, onDone)
 			} else {
 				throw new Error("loader not implemented")
 			}

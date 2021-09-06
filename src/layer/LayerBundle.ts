@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-27 08:26:19
- * @LastEditTime: 2021-09-05 09:56:49
+ * @LastEditTime: 2021-09-05 23:10:14
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \CocosGenericComponents\src\layer\SceneBundle.ts
@@ -128,9 +128,24 @@ namespace gcc.layer {
 		}
 
 		preloadBundle(name: string, layerMG: TLayerMG = this.layerMG) {
-			return this.foreachLayerBundleItems(name, (item) => {
-				return layerMG.preloadDialog(item)
-			})
+			let ls = this._foreachLayerBundleItems(name, (item) => {
+				let ppromise = layerMG.preloadDialog(item)
+				return ppromise
+			}) as PPromise<DialogModel>[]
+			let promise = toPPromise(Promise.all(ls))
+			let count = 0
+			for (let ppromise of ls) {
+				ppromise.onProgress((c, t, diff, isFirst) => {
+					count += diff
+					let total = 0
+					for (let p of ls) {
+						total += p.total
+					}
+					promise.notifyProgress(count, total)
+				})
+			}
+			promise.isWithProgress = true
+			return promise
 		}
 
 		createBundleItems(name: string, layerMG: TLayerMG = this.layerMG) {

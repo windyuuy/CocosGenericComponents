@@ -7,6 +7,14 @@ namespace gcc.respool {
 	 */
 	export class CCNodePoolMap extends ResPoolMap<cc.Node> {
 
+		onLoadResProgressRaw(prefabUrl: string, call: (count: number, total: number) => void) {
+			return resloader.ccResLoader.onLoadResProgress(prefabUrl, call)
+		}
+
+		offLoadResProgressRaw(prefabUrl: string, call: (count: number, total: number) => void) {
+			return resloader.ccResLoader.offLoadResProgress(prefabUrl, call)
+		}
+
 		loadPrefabRaw(prefabUrl: string, call: (prefab: cc.Prefab, err?: Error) => void) {
 			// cc.resources.load<cc.Prefab>(prefabUrl, (err, prefab: cc.Prefab) => {
 			// 	call(prefab, err)
