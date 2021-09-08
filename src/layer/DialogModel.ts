@@ -33,11 +33,11 @@ namespace gcc.layer {
 	 * 内部调用的对话框接口
 	 */
 	export interface IDialogInnerCall {
-		onEnter(): void;
-		playCloseAnimation(finished: () => void)
-		playOpenAnimation(finished: () => void)
-		onExposed();
-		onShield();
+		__callOnEnter(): void;
+		__callDoClose(resolve: () => void, reject: (reason: any) => void)
+		__callDoOpen(finished: () => void, reject: (reason: any) => void)
+		__callOnExposed();
+		__callOnShield();
 
 		node: cc.Node;
 
@@ -99,12 +99,12 @@ namespace gcc.layer {
 		/**
 		 * 顶级图层改变时调用
 		 */
-		onCoverChanged?()
+		__callOnCoverChanged?()
 
 		/**
 		 * 全局任意图层焦点改变时调用
 		 */
-		onAnyFocusChanged?(focus: boolean)
+		_callOnAnyFocusChanged?(focus: boolean)
 
 	}
 

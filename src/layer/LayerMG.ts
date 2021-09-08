@@ -251,7 +251,7 @@ namespace gcc.layer {
 				}
 			}
 
-			tInit.forEach(v => v.comp.onEnter())
+			tInit.forEach(v => v.comp.__callOnEnter())
 
 			tPause.forEach(v => {
 				v.state = DialogState.Shield
@@ -260,10 +260,10 @@ namespace gcc.layer {
 				v.state = DialogState.Exposed
 			})
 			tPause.forEach(v => {
-				v.comp.onShield()
+				v.comp.__callOnShield()
 			})
 			tResume.forEach(v => {
-				v.comp.onExposed()
+				v.comp.__callOnExposed()
 			})
 
 			this.refreshing = false;
@@ -273,9 +273,9 @@ namespace gcc.layer {
 			this.refreshDialogState();
 			this._layerList.forEach(layer => {
 				const comp = layer.comp
-				if (comp.onAnyFocusChanged) {
+				if (comp._callOnAnyFocusChanged) {
 					let focus = dialogNode == comp.node
-					comp.onAnyFocusChanged(focus);
+					comp._callOnAnyFocusChanged(focus);
 				}
 			})
 		}
@@ -380,10 +380,12 @@ namespace gcc.layer {
 							layerComp["__callOnOpened"] && layerComp["__callOnOpened"]()
 							resolve(dialogModel)
 						} else {
-							layerComp.playOpenAnimation(() => {
+							layerComp.__callDoOpen(() => {
 								this.postLayerChange(dialogModel.node)
 								layerComp["__callOnOpened"] && layerComp["__callOnOpened"]()
 								resolve(dialogModel)
+							}, (reason) => {
+								reject(reason)
 							})
 						}
 					} else {
@@ -456,10 +458,12 @@ namespace gcc.layer {
 							layerComp["__callOnClosed"] && layerComp["__callOnClosed"]()
 							resolve(layerModel)
 						} else {
-							layerComp.playCloseAnimation(() => {
+							layerComp.__callDoClose(() => {
 								this.doClose(layerModel, layerModel.destroyOnClose)
 								layerComp["__callOnClosed"] && layerComp["__callOnClosed"]()
 								resolve(layerModel)
+							}, (reason) => {
+								reject(reason)
 							})
 						}
 					} else {
