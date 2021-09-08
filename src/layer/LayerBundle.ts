@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-27 08:26:19
- * @LastEditTime: 2021-09-05 23:10:14
+ * @LastEditTime: 2021-09-08 10:25:11
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \CocosGenericComponents\src\layer\SceneBundle.ts
@@ -134,13 +134,11 @@ namespace gcc.layer {
 			}) as PPromise<DialogModel>[]
 			let promise = toPPromise(Promise.all(ls))
 			let count = 0
+			let total = 0
 			for (let ppromise of ls) {
-				ppromise.onProgress((c, t, diff, isFirst) => {
+				ppromise.onProgress((c, t, diff, tdiff, isFirst) => {
 					count += diff
-					let total = 0
-					for (let p of ls) {
-						total += p.total
-					}
+					total += tdiff
 					promise.notifyProgress(count, total)
 				})
 			}
