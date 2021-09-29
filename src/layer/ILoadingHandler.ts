@@ -9,9 +9,9 @@ namespace gcc.layer {
 	 * 触发loading事件处理器
 	 */
 	export interface ILoadingHandler {
-		onShowLoading?()
-		onHideLoading?()
-		onCloseLoading?()
+		onShowLoading?(key?: string)
+		onHideLoading?(key?: string)
+		onCloseLoading?(key?: string)
 	}
 
 }

@@ -30,6 +30,7 @@ namespace gcc.layer {
 			const handleConfigSource = (node: cc.Node) => {
 				this.sharedLayerMGComp = node.getComponent("LayerMGComp") as ILayerMGComp
 				node.setParent(cc.director.getScene())
+				// node.setSiblingIndex(node.parent!.children.length - 1s)
 			}
 			if (prefab) {
 				return new Promise((resolve, reject) => {
@@ -59,7 +60,7 @@ namespace gcc.layer {
 			}
 
 			let task = createPPromise<DialogModel>((resolve, reject) => {
-				this.createDialog(p).then((dialogModel) => {
+				this.getOrCreateDialog(p).then((dialogModel) => {
 					// const node = dialogModel.node
 					// if (!node.active) {
 					// 	node.active = true
@@ -177,20 +178,20 @@ namespace gcc.layer {
 
 		protected _loadingDelegate: Set<ILoadingHandler> = new Set()
 
-		addLoadingDelegate(delegate: ILoadingHandler) {
+		addLoadingHandler(delegate: ILoadingHandler) {
 			this._loadingDelegate.add(delegate)
 		}
-		removeLoadingDelegate(delegate: ILoadingHandler) {
+		removeLoadingHandler(delegate: ILoadingHandler) {
 			this._loadingDelegate.delete(delegate)
 		}
 
 		/**
 		 * 展示加载界面
 		 */
-		public showLoading() {
+		public showLoading(key?: string) {
 			this._loadingDelegate.forEach((d) => {
 				try {
-					d.onShowLoading && d.onShowLoading();
+					d.onShowLoading && d.onShowLoading(key);
 				} catch (e) {
 					console.error(e)
 				}
@@ -200,13 +201,13 @@ namespace gcc.layer {
 		/**
 		 * 关闭加载界面
 		 */
-		public closeLoading() {
+		public closeLoading(key?: string) {
 			this._loadingDelegate.forEach((d) => {
 				try {
 					if (d.onHideLoading) {
-						d.onHideLoading()
+						d.onHideLoading(key)
 					} else {
-						d.onCloseLoading && d.onCloseLoading();
+						d.onCloseLoading && d.onCloseLoading(key);
 					}
 				} catch (e) {
 					console.error(e)
@@ -424,7 +425,7 @@ namespace gcc.layer {
 			const uri = p.uri
 			instant = p.instant
 
-			return new Promise<DialogModel>((resolve, reject) => {
+			let waitClose = () => new Promise<DialogModel>((resolve, reject) => {
 				let layerModel: DialogModel
 				if (uri0 instanceof DialogModel) {
 					layerModel = uri0
@@ -472,6 +473,23 @@ namespace gcc.layer {
 					}
 				}
 			})
+
+			if (this.loadingDialogTasks.has(p.uri)) {
+				return new Promise((resolve, reject) => {
+					this.getOrCreateDialog(new ShowDialogParam(p.uri)).then(() => {
+						waitClose().then((dialogModel) => {
+							resolve(dialogModel)
+						}, (reason) => {
+							reject(reason)
+						})
+					}, (reason) => {
+						reject(reason)
+					})
+				})
+			} else {
+				return waitClose()
+			}
+
 		}
 
 		/**
