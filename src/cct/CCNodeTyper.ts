@@ -90,6 +90,27 @@ namespace gcc.cct {
 			return this.nodeMap[id]
 		}
 
+		findNodeByName(name: string): cc.Node | undefined {
+			for (let id in this.nodeMap) {
+				let node = this.nodeMap[id]
+				if (node.name == name) {
+					return node
+				}
+			}
+			return undefined
+		}
+
+		findNodesByName(name: string): cc.Node[] {
+			let nodes: cc.Node[] = []
+			for (let id in this.nodeMap) {
+				let node = this.nodeMap[id]
+				if (node.name == name) {
+					nodes.push(node)
+				}
+			}
+			return nodes
+		}
+
 		hideNode(id: number) {
 			this.getNodeById(id).active = false
 		}
