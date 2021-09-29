@@ -112,6 +112,12 @@ namespace gcc.respool {
 				return
 			}
 
+			prefabUrl = prefabId
+			if (prefabUrl != null) {
+				this.loadAndSavePrefab(prefabId, prefabUrl, call)
+				return
+			}
+
 			call(null, new Error("invalid prefabId"))
 		}
 

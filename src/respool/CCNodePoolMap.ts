@@ -81,7 +81,7 @@ namespace gcc.respool {
 				return node
 			} else {
 				if (prefab != null) {
-					const node = ccNodePreloader.instantiate(prefab)
+					const node = ccNodePreloader.instantiate(prefab, prefabId)
 					node.emit("ecs:reuse")
 					return node
 				}
@@ -99,7 +99,7 @@ namespace gcc.respool {
 			} else {
 				prefabLoadListener.onLoad((prefab) => {
 					if (call != null) {
-						let node = ccNodePreloader.instantiate(prefab)
+						let node = ccNodePreloader.instantiate(prefab, prefabId)
 						node.emit("ecs:reuse")
 
 						call(node)

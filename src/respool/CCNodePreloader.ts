@@ -113,12 +113,14 @@ namespace gcc.respool {
 			return this
 		}
 
-		instantiate(prefab: cc.Prefab): cc.Node {
+		instantiate(prefab: cc.Prefab, saveKey?: string): cc.Node {
 			// let url = prefab[CCMYURL]
 			if (!prefab.name) {
 				prefab.name = prefab.data.name
 			}
-			let saveKey = prefab.name
+			if (!saveKey) {
+				saveKey = prefab.name
+			}
 			let pool = this.resPoolMap[saveKey]
 			let node: cc.Node
 			if (saveKey && pool && pool.length > 0) {
@@ -127,7 +129,7 @@ namespace gcc.respool {
 				node = cc.instantiate(prefab)
 			}
 			if (!node[CCNodeSaveKey]) {
-				node[CCNodeSaveKey] = prefab.name
+				node[CCNodeSaveKey] = saveKey
 			}
 			return node
 		}
