@@ -175,7 +175,7 @@ namespace gcc.layer {
 		public isCancelShowing: boolean
 
 		/**
-		 * 显示当前对话框
+		 * 正在准备显示对话框
 		 */
 		public isShowing: boolean
 		/**

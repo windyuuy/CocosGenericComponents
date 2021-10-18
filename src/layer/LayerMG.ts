@@ -241,11 +241,11 @@ namespace gcc.layer {
 							tPause.push(dialog)
 						}
 					} else {
-						if (dialog.state != DialogState.Exposed) {
+						if (dialog.state != DialogState.Exposed && dialog.isOpen) {
 							tResume.push(dialog)
 						}
 
-						if (dialog.isShowing) {
+						if (dialog.isOpen) {
 							block = dialog.isCover
 						}
 					}
@@ -378,11 +378,13 @@ namespace gcc.layer {
 						layerComp.__callOnShow && layerComp.__callOnShow()
 						if (p.instant) {
 							this.postLayerChange(dialogModel.node)
+							dialogModel.isShowing = false
 							layerComp["__callOnOpened"] && layerComp["__callOnOpened"]()
 							resolve(dialogModel)
 						} else {
 							layerComp.__callDoOpen(() => {
 								this.postLayerChange(dialogModel.node)
+								dialogModel.isShowing = false
 								layerComp["__callOnOpened"] && layerComp["__callOnOpened"]()
 								resolve(dialogModel)
 							}, (reason) => {
