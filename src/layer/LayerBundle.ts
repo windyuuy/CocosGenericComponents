@@ -16,6 +16,15 @@ namespace gcc.layer {
 
 	export const DefaultBundleName = "default"
 
+	export class ShowBundleParams {
+		constructor(
+			public name: string,
+			public data?: object,
+		) {
+
+		}
+	}
+
 	/**
 	 * 管理图层约束
 	 */
@@ -109,9 +118,16 @@ namespace gcc.layer {
 			return Promise.all(this._foreachLayerBundleItems(name, call, []))
 		}
 
-		showBundle(name: string, layerMG: TLayerMG = this.layerMG) {
-			return this.foreachLayerBundleItems(name, (item) => {
-				return layerMG.showDialog(item)
+		showBundle(sp: string | ShowBundleParams, layerMG: TLayerMG = this.layerMG) {
+			let bsp: ShowBundleParams
+			if (typeof (sp) == "string") {
+				bsp = new ShowBundleParams(sp)
+			} else {
+				bsp = sp
+			}
+			return this.foreachLayerBundleItems(bsp.name, (item) => {
+				let dsp = new ShowDialogParam(item, bsp.data)
+				return layerMG.showDialog(dsp)
 			})
 		}
 
