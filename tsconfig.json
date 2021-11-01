@@ -13,18 +13,18 @@
     // "allowJs": true,                       /* Allow javascript files to be compiled. */
     // "checkJs": true,                       /* Report errors in .js files. */
     // "jsx": "preserve",                     /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */
-    "sourceMap": true, /* Generates corresponding '.map' file. */
+    "sourceMap": false, /* Generates corresponding '.map' file. */
     "declaration": true, /* Generates corresponding '.d.ts' file. */
     // "declarationMap": true,                /* Generates a sourcemap for each corresponding '.d.ts' file. */
     // "outFile": "D:/DATA/Projects/pockme/assets/scripts/deps/5.gcccomps.js", /* Concatenate and emit output to single file. */
     // "outFile": "E:/Libs/dogs/assets/scripts/deps/gcccomps.js", /* Concatenate and emit output to single file. */
     // "outFile": "D:/DATA/Projects/ECSWithBox2DGame/src/deps/gcccomps.js",                       /* Concatenate and emit output to single file. */
-    // "outFile": "./dist/gcccomps.js",                       /* Concatenate and emit output to single file. */
-    "outFile": "E:/DATA/Projects/netease/youdao-game-client/client/assets/script/deps/gcccomps.js",                       /* Concatenate and emit output to single file. */
+    "outFile": "./dist/gcccomps.js",                       /* Concatenate and emit output to single file. */
+    // "outFile": "E:/DATA/Projects/netease/youdao-game-client2/client/assets/script/deps/gcccomps.js",                       /* Concatenate and emit output to single file. */
     // "outDir": "./",                        /* Redirect output structure to the directory. */
     // "rootDir": "./",                       /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     "composite": true,                     /* Enable project compilation */
-    // "tsBuildInfoFile": "./",               /* Specify file to store incremental compilation information */
+    "tsBuildInfoFile": "./dist/tsbuildinfo.json",               /* Specify file to store incremental compilation information */
     // "removeComments": true,                /* Do not emit comments to output. */
     // "noEmit": true,                        /* Do not emit outputs. */
     // "importHelpers": true,                 /* Import emit helpers from 'tslib'. */
@@ -59,7 +59,7 @@
     // "sourceRoot": "",                      /* Specify the location where debugger should locate TypeScript files instead of source locations. */
     // "mapRoot": "",                         /* Specify the location where debugger should locate map files instead of generated locations. */
     // "inlineSourceMap": true,               /* Emit a single file with source maps instead of having a separate file. */
-    "inlineSources": true, /* Emit the source alongside the sourcemaps within a single file; requires '--inlineSourceMap' or '--sourceMap' to be set. */
+    "inlineSources": false, /* Emit the source alongside the sourcemaps within a single file; requires '--inlineSourceMap' or '--sourceMap' to be set. */
     /* Experimental Options */
     "experimentalDecorators": true, /* Enables experimental support for ES7 decorators. */
     // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
