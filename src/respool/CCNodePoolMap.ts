@@ -133,6 +133,7 @@ namespace gcc.respool {
 				node.parent = null
 				let animComps = node.getComponentsInChildren(cc.Animation)
 				animComps.forEach((comp) => {
+					comp.targetOff(comp)
 					comp.stop()
 				})
 				pool.push(node)
