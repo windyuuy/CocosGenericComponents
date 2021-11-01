@@ -8,24 +8,52 @@ namespace gcc.cct {
 	}
 
 	const ANodeName = "*_"
+	const ANodeAttr = "*__attrs"
 
 	export class CCNodeTyper {
+
+		/**
+		 * 是否自动清理缓存中不可用的节点
+		 */
+		needAutoCleanInvalidNodes: boolean = true
 
 		/**
 		 * 打印单个节点的信息 childName(childIndex, uid)
 		 */
 		protected _collNode(node: cc.Node, index: { id: number }, childIndex: number, tree: NodeTree) {
-			this.nodeMap[index.id] = node
+			let indexID = this.nodeIndexMap[node.uuid]
+			if (indexID == null) {
+				indexID = ++index.id
+				this.nodeMap[indexID] = node
+				this.nodeIndexMap[node.uuid] = indexID
+			}
 
-			let name = `${node.name}(${childIndex},${index.id})`
+			let name = `${node.name}(${childIndex},${indexID})`
 			let obj = Object.create(null)
 			obj[ANodeName] = node
+
+			let nodeAttrs = Object.create(null)
+			let active = node.active
+			if (!active) {
+				nodeAttrs['a'] = 'T'
+			}
+			let pos = node.position
+			let posInfo = Object.create(null)
+			let posLines: string[] = ['x', 'y', 'z',].filter(k => pos[k] !== 0).map(k => `${k}:${pos[k]}`)
+			if (posLines.length > 0) {
+				nodeAttrs['pos'] = `(${posLines.join(",")})`
+			}
+
+			if (Object.keys(nodeAttrs).length > 0) {
+				obj[ANodeAttr] = nodeAttrs
+			}
+
 			tree[name] = obj
+			this.nodeTree[indexID] = obj
 			return name
 		}
 
 		protected _collNodeRecursely(node: cc.Node, index: { id: number }, childIndex: number, tree: NodeTree) {
-			index.id++
 			let name = this._collNode(node, index, childIndex, tree)
 			let subTree = tree[name]
 			node.children.forEach((child, cindex) => {
@@ -33,9 +61,30 @@ namespace gcc.cct {
 			})
 		}
 
-		protected nodeMap: { [key: number]: cc.Node } = {}
-		protected nodeTree: { [key: number]: NodeTree } = {}
+		protected nodeMap: { [key: number]: cc.Node } = Object.create(null)
+		protected nodeIndexMap: { [key: string]: number } = this.nodeMap as any
+		protected nodeTree: { [key: number]: NodeTree } = Object.create(null)
+
+		autoCleanInvalidNodes() {
+			if (this.needAutoCleanInvalidNodes) {
+				this.cleanInvalidNodes()
+			}
+		}
+		cleanInvalidNodes() {
+			for (let key in this.nodeIndexMap) {
+				let index = this.nodeIndexMap[key]
+				let node = this.nodeMap[index]
+
+				if (!cc.isValid(node)) {
+					delete this.nodeIndexMap[key]
+					delete this.nodeMap[index]
+					delete this.nodeTree[index]
+				}
+			}
+		}
+
 		collectNode(root: cc.Node) {
+			this.autoCleanInvalidNodes()
 			let rootTree = Object.create(null)
 			this._collNodeRecursely(root, { id: 0 }, 0, rootTree)
 			return rootTree
@@ -53,8 +102,20 @@ namespace gcc.cct {
 			return this.collectAll()
 		}
 
-		protected _typeNode(node: NodeTree, index: number, key: string, info: string[]) {
-			info.push(`${"|\t".repeat(index)}${key}`)
+		protected _typeNode(tree: NodeTree, index: number, key: string, info: string[]) {
+			let node = tree[ANodeName] as any as cc.Node
+			let nodeInfoLine = ""
+			if (node) {
+				let nodeInfo = []
+				nodeInfo.push(`active:${node.active}`)
+
+				let pos = node.position
+				nodeInfo.push(`pos:(${pos.x},${pos.y},${pos.z})`)
+				if (nodeInfo.length > 0) {
+					nodeInfoLine = `\t\t-> ${nodeInfo.join(", ")}`
+				}
+			}
+			info.push(`${"|\t".repeat(index)}${key}${nodeInfoLine}`)
 		}
 
 		protected _typeNodeRecursely(node: NodeTree, index: number, key: string, info: string[]) {
@@ -86,8 +147,16 @@ namespace gcc.cct {
 			return this.typeNode(root)
 		}
 
+		printAll() {
+			this.typeAll().forEach(l => console.log(l))
+		}
+
 		getNodeById(id: number): cc.Node {
 			return this.nodeMap[id]
+		}
+
+		getTreeById(id: number): NodeTree {
+			return this.nodeTree[id]
 		}
 
 		findNodeByName(name: string): cc.Node | undefined {
