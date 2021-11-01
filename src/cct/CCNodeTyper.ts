@@ -110,7 +110,7 @@ namespace gcc.cct {
 				nodeInfo.push(`active:${node.active}`)
 
 				let pos = node.position
-				nodeInfo.push(`pos:(${pos.x},${pos.y},${pos.z})`)
+				nodeInfo.push(`pos:(x:${pos.x},y:${pos.y},z:${pos.z})`)
 				if (nodeInfo.length > 0) {
 					nodeInfoLine = `\t\t-> ${nodeInfo.join(", ")}`
 				}
@@ -122,7 +122,7 @@ namespace gcc.cct {
 			this._typeNode(node, index, key, info)
 
 			for (let subKey in node) {
-				if (subKey == ANodeName) {
+				if (subKey == ANodeName || subKey == ANodeAttr) {
 					continue
 				}
 				let subNode = node[subKey]
